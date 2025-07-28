@@ -7,16 +7,17 @@ import src.route_schema
 
 secret_key = secrets.token_hex(16)
 
+def main():
 
-register_admin_ui()
-register_entries_ui()
-register_submit_ui()
+    register_admin_ui()
+    register_entries_ui()
+    register_submit_ui()
 
 
-ui.run(
-    storage_secret=secret_key,
-    port=8081, 
-    title='Soothing AI', 
-    reload=True, 
-    favicon='', 
-    dark=False)
+    ui.run(
+        storage_secret=secret_key,
+        port=8081, 
+        title='Soothing AI', 
+        reload=True, 
+        favicon='', 
+        dark=False)
