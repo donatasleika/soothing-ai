@@ -21,3 +21,6 @@ def main():
         reload=True, 
         favicon='', 
         dark=False)
+
+if __name__ == "__main__":
+    main()
