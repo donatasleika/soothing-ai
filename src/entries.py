@@ -39,6 +39,7 @@ def render_entry_card(entry, index):
         with ui.card().classes('w-full mb-4 p-4'):
             with ui.row().classes('w-full justify-start items-center'):
                 ui.label(entry.get("time_of_entry", "Unknown"))
+                ui.label(entry)
                 ui.space()
                 ui.label(entry.get("patient_name", "N/A")).classes('text-sm').style('margin-right: 10px;')
 
@@ -60,7 +61,7 @@ def register_entries_ui():
         ui.add_body_html('''
         <style>
         * {
-            margin: 1 !important;
+            margin: 0 !important;
             padding: 0 !important;
             box-sizing: border-box;
         }
