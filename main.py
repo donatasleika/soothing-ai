@@ -4,6 +4,7 @@ from src.patient_entry_url import register_submit_ui
 from nicegui import ui
 import secrets
 import src.route_schema
+import os
 
 secret_key = secrets.token_hex(16)
 
@@ -16,7 +17,7 @@ def main():
 
     ui.run(
         storage_secret=secret_key,
-        port=8081, 
+        port=int(os.environ.get("PORT", 8080)), 
         title='Soothing AI', 
         reload=True, 
         favicon='', 
