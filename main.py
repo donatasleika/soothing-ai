@@ -10,6 +10,9 @@ secret_key = secrets.token_hex(16)
 
 # def main():
 
+print("NiceGUI app initialized")
+
+
 register_admin_ui()
 register_entries_ui()
 register_submit_ui()
