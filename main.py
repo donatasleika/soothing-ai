@@ -18,7 +18,7 @@ register_entries_ui()
 register_submit_ui()
 
 
-ui.run(
+app = ui.run_with(
     storage_secret=secret_key,
     host='0.0.0.0', 
     port=8080, 
