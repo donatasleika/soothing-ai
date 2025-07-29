@@ -23,7 +23,6 @@ ui.run(
     host='0.0.0.0', 
     port=8080, 
     title='Soothing AI', 
-    reload=False, 
     favicon='', 
     dark=False)
 
