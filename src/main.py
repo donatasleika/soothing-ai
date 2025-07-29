@@ -18,13 +18,14 @@ register_entries_ui()
 register_submit_ui()
 
 
-    # ui.run(
-    #     storage_secret=secret_key,
-    #     port=int(os.environ.get("PORT", 8080)), 
-    #     title='Soothing AI', 
-    #     reload=True, 
-    #     favicon='', 
-    #     dark=False)
+ui.run(
+    storage_secret=secret_key,
+    host='0.0.0.0', 
+    port=8080, 
+    title='Soothing AI', 
+    reload=True, 
+    favicon='', 
+    dark=False)
 
 
 # main()
