@@ -8,20 +8,20 @@ import os
 
 secret_key = secrets.token_hex(16)
 
-def main():
+# def main():
 
-    register_admin_ui()
-    register_entries_ui()
-    register_submit_ui()
-
-
-    ui.run(
-        storage_secret=secret_key,
-        port=int(os.environ.get("PORT", 8080)), 
-        title='Soothing AI', 
-        reload=True, 
-        favicon='', 
-        dark=False)
+register_admin_ui()
+register_entries_ui()
+register_submit_ui()
 
 
-main()
+    # ui.run(
+    #     storage_secret=secret_key,
+    #     port=int(os.environ.get("PORT", 8080)), 
+    #     title='Soothing AI', 
+    #     reload=True, 
+    #     favicon='', 
+    #     dark=False)
+
+
+# main()
