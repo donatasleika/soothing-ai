@@ -23,5 +23,5 @@ def main():
         favicon='', 
         dark=False)
 
-if __name__ == "__main__":
-    main()
+
+main()
