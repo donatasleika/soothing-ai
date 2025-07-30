@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from pymongo import MongoClient
 
-cluster = MongoClient("mongodb+srv://donatas:Meileyracia42@cluster0.v4cy82i.mongodb.net/?retryWrites=true&w=majority", tls=True, tlsAllowInvalidCertificates=True)
+cluster = MongoClient("mongodb+srv://donatas:Meileyracia42@cluster0.v4cy82i.mongodb.net/?retryWrites=true&w=majority&ssl=true", tls=True, tlsAllowInvalidCertificates=True)
 db = cluster["Cluster0"]
 collection = db["tokens"]
 
