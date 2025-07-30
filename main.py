@@ -8,7 +8,6 @@ import os
 
 secret_key = secrets.token_hex(16)
 
-# def main():
 
 print("NiceGUI app initialized")
 
@@ -26,5 +25,3 @@ ui.run(
     favicon='', 
     dark=False)
 
-
-# main()
