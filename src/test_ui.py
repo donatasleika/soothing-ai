@@ -3,6 +3,7 @@ import secrets
 import uuid
 from . import mongodb_db
 import json
+import os
 from types import SimpleNamespace
 from .route_schema import set_shared_state, get_shared_state
 patient_state_name = SimpleNamespace(patient_name=None)
@@ -17,6 +18,10 @@ client_data = {
 
 # Working patient_id
 patient_cards = {}
+
+def get_base_url():
+    return os.getenv("BASE_URL", "http://127.0.0.1:8082")
+
 
 def new_patient_id() -> str:
     current_patients = mongodb_db.find_all_patients(client_data=client_data)
@@ -37,7 +42,9 @@ async def create_private_url(patient_name: str, patient_id: str) -> str:
             set_shared_state(normalized, patient_name, token)
             break
 
-    return f'http://127.0.0.1:8082/{normalized}/{token}'
+    base_url = get_base_url()
+
+    return f'{base_url}/{normalized}/{token}'
 
 def register_admin_ui():
     @ui.page('/')

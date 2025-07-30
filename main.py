@@ -16,6 +16,9 @@ register_admin_ui()
 register_entries_ui()
 register_submit_ui()
 
+def get_base_url():
+    return os.getenv("BASE_URL", "http://127.0.0.1:8082")
+
 
 ui.run(
     storage_secret=secret_key,
