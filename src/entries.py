@@ -29,11 +29,11 @@ def render_entry_card(entry, index):
     """Renders a single journal entry card."""
     show_more = False
 
-    def toggle():
-        nonlocal show_more
-        show_more = not show_more
-        more_text.set_visibility(show_more)
-        toggle_button.set_text('Show Less' if show_more else 'Show More')
+    # def toggle():
+    #     nonlocal show_more
+    #     show_more = not show_more
+    #     more_text.set_visibility(show_more)
+    #     toggle_button.set_text('Show Less' if show_more else 'Show More')
 
     with entries_container:
         with ui.card().classes('w-full mb-4 p-4'):
