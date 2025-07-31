@@ -36,22 +36,23 @@ def render_entry_card(entry, index):
         toggle_button.set_text('Show Less' if show_more else 'Show More')
 
     with entries_container:
-        with ui.row().classes('w-full justify-start items-center'):
-            ui.label(entry.get("time_of_entry", "Unknown"))
-            ui.space()
-            ui.label(entry.get("patient_name", "N/A")).classes('text-sm').style('margin-right: 10px;')
+        with ui.card().classes('w-full mb-4 p-4'):
+            with ui.row().classes('w-full justify-start items-center'):
+                ui.label(entry.get("time_of_entry", "Unknown"))
+                ui.space()
+                ui.label(entry.get("patient_name", "N/A")).classes('text-sm').style('margin-right: 10px;')
 
-        ui.label(entry.get("description", "No description")).classes('text-body-1')
+            ui.label(entry.get("description", "No description")).classes('text-body-1')
 
-        more_text = ui.label(
-            f'Tags: {", ".join(entry.get("tags", []))}'
-        ).props('style="margin-top: 8px"').classes('text-sm')
-        more_text.set_visibility(False)
+            more_text = ui.label(
+                f'Tags: {", ".join(entry.get("tags", []))}'
+            ).props('style="margin-top: 8px"').classes('text-sm')
+            more_text.set_visibility(False)
 
-        with ui.row().classes('w-full justify-between items-center').style('margin-top: 16px;'):
-            with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
-                ui.label(str(index)).classes('text-sm p-0 m-0 text-bold')
-            toggle_button = ui.button('Show More', on_click=toggle).props('flat color=primary').classes('text-sm justify-end')
+            with ui.row().classes('w-full justify-between items-center').style('margin-top: 16px;'):
+                with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
+                    ui.label(str(index)).classes('text-sm p-0 m-0 text-bold')
+                toggle_button = ui.button('Show More', on_click=toggle).props('flat color=primary').classes('text-sm justify-end')
 
 def register_entries_ui():
     @ui.page('/entries')
