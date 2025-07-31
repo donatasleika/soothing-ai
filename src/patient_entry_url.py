@@ -97,7 +97,7 @@ def register_submit_ui():
                             }
                             print(client_name)
 
-                            patient_data = {
+                            entry_data = {
                                 'client_id': "1234", # Need to edit this. It's not important to have the client ID here (maybe)
                                 'patient_name': p_name,
                                 'patient_id': "1",  # This should be dynamic based on the patient
@@ -106,13 +106,15 @@ def register_submit_ui():
                             }
 
 
+                            mongodb_db.insert_one_entry(client_data, entry_data)
 
-                            total_entries = mongodb_db.check_num_entries(client_data, patient_data)
 
-                            entry_position = len(total_entries) + 1 if total_entries else 1
+                            # total_entries = mongodb_db.check_num_entries(client_data, patient_data)
 
-                            print(patient_data)
-                            print(entry_position)
+                            # entry_position = len(total_entries) + 1 if total_entries else 1
+
+                            # print(patient_data)
+                            # print(entry_position)
                             
 
                     input_box.on('keydown', handle_key)
