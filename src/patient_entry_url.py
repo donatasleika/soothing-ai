@@ -103,7 +103,7 @@ def register_submit_ui():
                                  # Need to edit this. It's not important to have the client ID here (maybe)
                                 'entry_id': 1,
                                 'patient_id': "3",
-                                'time_of_entry': datetime.now(),
+                                'time_of_entry': str(datetime.now().strftime("%Y-%m-%d %H:%M")),
                                 # 'patient_name': p_name,
                                   # This should be dynamic based on the patient
                                 'description': message_text,
