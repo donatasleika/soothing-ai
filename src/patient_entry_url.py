@@ -4,6 +4,8 @@ import secrets
 from .route_schema import get_shared_state
 from pymongo.mongo_client import MongoClient
 from . import mongodb_db
+from datetime import datetime
+
 
 # token = secrets.token_hex(16)
 # client_name, patient_name, token = get_shared_state(token)
@@ -98,11 +100,14 @@ def register_submit_ui():
                             print(client_name)
 
                             entry_data = {
-                                'client_id': "1234", # Need to edit this. It's not important to have the client ID here (maybe)
-                                'patient_name': p_name,
-                                'patient_id': "1",  # This should be dynamic based on the patient
-                                'message': message_text,
-                                'token': usable_token,
+                                 # Need to edit this. It's not important to have the client ID here (maybe)
+                                'entry_id': 1,
+                                'patient_id': "3",
+                                'time_of_entry': datetime.now(),
+                                # 'patient_name': p_name,
+                                  # This should be dynamic based on the patient
+                                'description': message_text,
+                                # 'token': usable_token,
                             }
 
 

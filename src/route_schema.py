@@ -31,19 +31,3 @@ def get_shared_state(token):
     return doc["client_name"], doc["patient_name"], doc["token"]
 
 
-# class RouteSchema(BaseModel):
-#     url_id: str = Field(..., description="Unique identifier for the URL")
-#     url_path: str = Field(..., description="Path of the URL")
-#     patient_id: Optional[str] = Field(None, description="ID of the patient associated with the URL")
-#     patient_name: Optional[str] = Field(None, description="Name of the patient associated with the URL")
-#     timestamp: pd.Timestamp = Field(..., description="Timestamp when the URL was accessed")
-#     entry: str = Field(..., description="Entry associated with the URL")
-#     entries: List[str] = Field(..., description="List of entries associated with the URL")
-#     total_entries: int = Field(..., description="Total number of entries associated with the URL")
-
-
-# class Programmes():
-#     no_programme = None
-#     cbt_programme = 'CBT Programme'
-#     act_programme = 'ACT Programme'
-#     custom_programme = 'Custom Programme'
