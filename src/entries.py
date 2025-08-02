@@ -10,7 +10,7 @@ client_data = {
 }
 
 selected_patient = {'name': None}
-entries_container = ui.row()  # Shared container for dynamic entry display
+entries_container = ui.column().classes('justify-left').style('margin: 0; padding: 8px;') # Shared container for dynamic entry display
 
 
 def normalize_entry(entry):
@@ -37,26 +37,26 @@ def render_entry_card(entry, index, patient_name):
         toggle_button.set_text('Show Less' if show_more else 'Show More')
 
     # Visualize the individual entries
-    with ui.row():
-        with entries_container:
-                with ui.card().classes('w-full mb-4 p-4'):
-                    with ui.row().classes('w-full justify-start items-center'):
-                        print(f'Entry: {entry}')
-                        ui.label(entry.get("time_of_entry", "Unknown"))
-                        ui.space()
-                        # ui.label(entry.get("patient_name", "N/A")).classes('text-sm').style('margin-right: 10px;')
 
-                    ui.label(entry.get("description", "No description")).classes('text-body-1')
+    with entries_container:
+        with ui.card().classes('w-72 mb-4 p-4'):
+            with ui.row().classes('w-full justify-start items-center'):
+                print(f'Entry: {entry}')
+                ui.label(entry.get("time_of_entry", "Unknown"))
+                ui.space()
+                # ui.label(entry.get("patient_name", "N/A")).classes('text-sm').style('margin-right: 10px;')
 
-                    more_text = ui.label(
-                        f'Tags: {", ".join(entry.get("tags", []))}'
-                    ).props('style="margin-top: 8px"').classes('text-sm')
-                    more_text.set_visibility(False)
+            ui.label(entry.get("description", "No description")).classes('text-body-1')
 
-                    with ui.row().classes('w-full justify-between items-center').style('margin-top: 16px;'):
-                        with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
-                            ui.label(str(index)).classes('text-sm p-0 m-0 text-bold')
-                        toggle_button = ui.button('Show More', on_click=toggle).props('flat color=primary').classes('text-sm justify-end')
+            more_text = ui.label(
+                f'Tags: {", ".join(entry.get("tags", []))}'
+            ).props('style="margin-top: 8px"').classes('text-sm')
+            more_text.set_visibility(False)
+
+            with ui.row().classes('w-full justify-between items-center mt-4'):
+                with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
+                    ui.label(str(index)).classes('text-sm p-0 m-0 text-bold')
+                toggle_button = ui.button('Show More', on_click=toggle).props('flat color=primary').classes('text-sm justify-end')
 
 def register_entries_ui():
     @ui.page('/entries')
@@ -98,15 +98,21 @@ def register_entries_ui():
                         .on_click(load_entries).classes('w-full').style('margin: 0; padding: 8px;')
 
             # Main content area
+            # entries_container = ui.row().classes('flex-wrap gap-4').style('margin: 0; padding: 8px;')
+            # with ui.column().classes('flex-grow h-full p-6'):
+            #     ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg mb-2')
+
+            #     entries_container.classes('w-full')  # Optional: enforce layout
+                        
             with ui.column().classes('flex-grow h-full p-6'):
                 # ui.label('Entries').classes('text-2xl')
                 with ui.row():
                     print('')
                 global entries_container
-                with ui.row().classes('w-full justify-between items-center').style('margin-bottom: 20px;'):
+                # with ui.row().classes('w-full justify-between items-center').style('margin-bottom: 20px;'):
                     # ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg')
-                    entries_container = ui.column().classes('justify-left').style('margin: 0; padding: 8px;')
-                    
+                entries_container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
+                
 
 
     # ui.run(port=8081, title='Soothing AI - Entries', reload=True, favicon='', dark=False)
