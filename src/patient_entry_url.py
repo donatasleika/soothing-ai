@@ -60,7 +60,7 @@ chat_bubbles = []
 def register_submit_ui():
     @ui.page('/{client_name}/{token}')
     def submit_entry(client_name, token):
-        c_name, p_name, usable_token = get_shared_state(token)
+        c_name, p_name, usable_token, patient_id = get_shared_state(token)
 
         print(f'Client Name: {c_name}, Patient Name: {p_name}, Token: {usable_token}')
 
@@ -102,9 +102,9 @@ def register_submit_ui():
                             entry_data = {
                                  # Need to edit this. It's not important to have the client ID here (maybe)
                                 'entry_id': 1,
-                                'patient_id': "3",
+                                'patient_id': patient_id,
                                 'time_of_entry': str(datetime.now().strftime("%Y-%m-%d %H:%M")),
-                                # 'patient_name': p_name,
+                                'patient_name': p_name,
                                   # This should be dynamic based on the patient
                                 'description': message_text,
                                 # 'token': usable_token,

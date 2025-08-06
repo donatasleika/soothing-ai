@@ -39,7 +39,7 @@ async def create_private_url(patient_name: str, patient_id: str) -> str:
     while True:
         token = str(uuid.uuid4())
         if not mongodb_db.check_url_tokens(token, client_data):
-            set_shared_state(normalized, patient_name, token)
+            set_shared_state(normalized, patient_name, token, patient_id)
             break
 
     base_url = get_base_url()

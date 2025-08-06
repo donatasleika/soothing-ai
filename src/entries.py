@@ -97,13 +97,7 @@ def register_entries_ui():
                     ui.button(patient_name).props('flat color=primary') \
                         .on_click(load_entries).classes('w-full').style('margin: 0; padding: 8px;')
 
-            # Main content area
-            # entries_container = ui.row().classes('flex-wrap gap-4').style('margin: 0; padding: 8px;')
-            # with ui.column().classes('flex-grow h-full p-6'):
-            #     ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg mb-2')
-
-            #     entries_container.classes('w-full')  # Optional: enforce layout
-                        
+  
             with ui.column().classes('flex-grow h-full p-6'):
                 # ui.label('Entries').classes('text-2xl')
                 with ui.row():

@@ -11,12 +11,13 @@ collection = db["tokens"]
 logged_in_client = {}
 
 # This is already connected to test_ui.py
-def set_shared_state(client_name, patient_name, token):
+def set_shared_state(client_name, patient_name, token, patient_id):
     collection.update_one(
         {"token": token},
         {"$set": {
             "client_name": client_name,
-            "patient_name": patient_name
+            "patient_name": patient_name,
+            "patient_id": patient_id
         }},
         upsert=True
     )
