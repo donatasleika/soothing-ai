@@ -55,7 +55,7 @@ def render_entry_card(entry, index, patient_name):
 
             with ui.row().classes('w-full justify-between items-center mt-4'):
                 with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
-                    ui.label(str(index)).classes('text-sm p-0 m-0 text-bold')
+                    ui.label(str(index+1)).classes('text-sm p-0 m-0 text-bold')
                 toggle_button = ui.button('Show More', on_click=toggle).props('flat color=primary').classes('text-sm justify-end')
 
 def register_entries_ui():
