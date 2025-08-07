@@ -107,7 +107,7 @@ def register_submit_ui():
                                 'patient_name': p_name,
                                   # This should be dynamic based on the patient
                                 'description': message_text,
-                                # 'token': usable_token,
+                                'token': usable_token,
                             }
 
 

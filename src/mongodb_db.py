@@ -151,8 +151,9 @@ def insert_one_patient(client_data, patient_data):
 def insert_one_entry(client_data, entry_data):
     collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
     collection.update_one(
-        {"_id": entry_data["patient_id"]},
-        {"$push": {"entries": entry_data}},
+        {"patient_name": entry_data["patient_name"]},
+        {"$push": {
+            "entries": entry_data}},
         upsert=True
     )
     print("Entry has been uploaded")
