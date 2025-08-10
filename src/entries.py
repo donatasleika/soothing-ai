@@ -71,7 +71,7 @@ def register_entries_ui():
         </style>
         ''')
 
-        with ui.row().classes('w-full h-screen'):
+        with ui.row().classes('w-full h-screen flex-nowrap items-stretch'):
             # Sidebar
             with ui.element('aside').classes('w-60 h-full bg-gray-100').style('padding: 0; margin-right: 5px; display: flex; flex-direction: column; gap: 0;'):
                 with ui.row().classes('justify-center'):
@@ -97,16 +97,17 @@ def register_entries_ui():
                     ui.button(patient_name).props('flat color=primary') \
                         .on_click(load_entries).classes('w-full').style('margin: 0; padding: 8px;')
 
-  
-            with ui.column().classes('flex-grow h-full p-6'):
-                # ui.label('Entries').classes('text-2xl')
-                with ui.row():
-                    print('')
-                global entries_container
-                # with ui.row().classes('w-full justify-between items-center').style('margin-bottom: 20px;'):
-                    # ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg')
-                entries_container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
-                
+    
+            with ui.column().classes('flex-1 min-w-0 h-full p-6 overflow-auto'):
+                # with ui.card().classes('w-full'):
+                    # ui.label('Entries').classes('text-2xl')
+                    with ui.row():
+                        print('')
+                    global entries_container
+                    # with ui.row().classes('w-full justify-between items-center').style('margin-bottom: 20px;'):
+                        # ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg')
+                    entries_container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
+                    
 
 
     # ui.run(port=8081, title='Soothing AI - Entries', reload=True, favicon='', dark=False)
