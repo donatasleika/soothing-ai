@@ -6,6 +6,8 @@ from pymongo.mongo_client import MongoClient
 from . import mongodb_db
 from datetime import datetime
 
+import httpx
+import asyncio
 
 # token = secrets.token_hex(16)
 # client_name, patient_name, token = get_shared_state(token)
@@ -57,9 +59,71 @@ chat_bubbles = []
 #     """
 #     await ui.run_javascript(js)
 
+
+
+
 def register_submit_ui():
     @ui.page('/{client_name}/{token}')
     def submit_entry(client_name, token):
+
+        # Inject JS script on page load
+        ui.add_head_html('''
+        <script>
+        let isRecording = false;
+        let recognition;
+        let finalTranscript = '';
+
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("Speech recognition not supported in this browser (try Chrome).");
+        } else {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+        recognition.onresult = function(event) {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+            } else {
+            interimTranscript += event.results[i][0].transcript;
+            }
+        }
+        const el = document.querySelector('textarea.mic_textarea'); // native textarea
+        if (!el) { console.warn('mic_textarea not found'); return; }
+        el.value = finalTranscript + interimTranscript;
+        el.dispatchEvent(new Event('input', { bubbles: true }));    // notify Quasar/NiceGUI
+        };
+
+        recognition.onend = function() {
+        isRecording = false;
+        const b = document.getElementById('recordButton');
+        if (b) b.innerText = 'Start Microphone';
+        };
+
+        recognition.onerror = function(e) {
+        console.error('speech error', e);
+        };
+
+        function toggleRecording(buttonId) {
+            const button = document.getElementById(buttonId);
+            if (!isRecording) {
+                finalTranscript = '';
+                recognition.start();
+                isRecording = true;
+                button.innerText = 'Stop Microphone';
+            } else {
+                recognition.stop();
+            }
+        }
+        </script>
+        ''')
+
+
+
+
+
         c_name, p_name, usable_token, patient_id = get_shared_state(token)
 
         print(f'Client Name: {c_name}, Patient Name: {p_name}, Token: {usable_token}')
@@ -71,18 +135,43 @@ def register_submit_ui():
         
         ui.query('body').classes('bg-gradient-to-t from-blue-400 to-blue-100')
 
+        # # Poll the transcript
+        # async def update_label():
+        #     async with httpx.AsyncClient() as client:
+        #         while True:
+        #             try:
+        #                 # response = await client.get('http://localhost:8080/get_transcript')
+        #                 # if response.status_code == 200:
+        #                 #     result = response.json()
+        #                     transcript_output.text = result.get('text', '')
 
-        
+        #                     # Gauti GPT atsakymą
+        #                     g_response = await client.get('http://localhost:8080/get_response')
+        #                     if g_response.status_code == 200:
+        #                         input_box.text = g_response.json().get('response', '')
+
+        #             except Exception as e:
+        #                 print('Error fetching transcript:', e)
+        #             await asyncio.sleep(1)
+
+        # ui.timer(interval=1.0, callback=update_label)
+
         with ui.row().classes('w-full h-screen items-center justify-center'):
             with ui.card().classes('max-w-2xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg').style('border: 1px solid #e2e8f0;') \
                 .props('rounded=lg shadow=md'):
 
                 with ui.row().classes('items-center justify-between'):
 
-                    input_box = ui.textarea(placeholder='Describe what`s happening...') \
-                        .props('outlined auto-grow') \
-                        .classes('w-full') \
-                        .style('bottom: 0; left: 0; right: 0; padding: 12px; background: white; z-index: 50; y-index:50;')
+                    # transcript_output = ui.label().style('margin-left: 17px')
+                    input_box = (
+                        ui.textarea(placeholder="Describe what's happening...")
+                        .props('outlined auto-grow input-class=mic_textarea')  # applies to the native <textarea>
+                        .props('id=mic_textbox')  # optional, keep if you want
+                        .classes('w-full')
+                    )
+
+
+                    # ui.on_event('speechText', lambda e: input_box.set_value(e.args))
 
                     async def handle_key(e):
                         if e.args['key'] == 'Enter' and not e.args.get('shiftKey', False):
@@ -127,11 +216,10 @@ def register_submit_ui():
                     
 
                 with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; '):
-                
-                    ui.button(icon='mic').props('flat').classes('ml-auto')
-
-
-                    # input_box.on('keyup', handle_enter)
+                    pass
+                    # toggle_recording = ui.button(icon='mic').props('flat id=recordButton')
+                    # toggle_recording.on('click', lambda: ui.run_javascript('toggleRecording("recordButton")'))
+                    #                     # input_box.on('keyup', handle_enter)
 
 
     # secret_key = secrets.token_hex(16)
