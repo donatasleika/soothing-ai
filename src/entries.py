@@ -48,10 +48,26 @@ def render_entry_card(entry, index, patient_name):
 
             ui.label(entry.get("description", "No description")).classes('text-body-1')
 
-            more_text = ui.label(
-                f'Tags: {", ".join(entry.get("tags", []))}'
-            ).props('style="margin-top: 8px"').classes('text-sm')
-            more_text.set_visibility(False)
+            
+            # more_text = ui.label(
+            #     f'Tags: {", ".join(entry.get("tags", [{}]))}'
+            # ).props('style="margin-top: 8px"').classes('text-sm')
+            # more_text.set_visibility(False)
+
+            more_text = entry.get("tags") or {}
+            parts = []
+            if more_text.get("sentiment"):
+                parts.append(f"Sentiment: {more_text['sentiment']}")
+            if more_text.get("tone"):
+                parts.append("Tone: " + ", ".join(more_text["tone"]))
+            if more_text.get("keywords"):
+                parts.append("Keywords: " + ", ".join(more_text["keywords"]))
+            ui.label(" | ".join(parts) if parts else "No Tags") \
+               
+
+            # more_text = ui.label(str(entry.get("tags":["tone"]) or "No Tags")) \
+            #     .props('style="margin-top: 8px"').classes('text-sm')
+            # more_text.set_visibility(False)
 
             with ui.row().classes('w-full justify-between items-center mt-4'):
                 with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
