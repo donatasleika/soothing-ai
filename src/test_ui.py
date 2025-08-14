@@ -140,12 +140,20 @@ def register_admin_ui():
 
                         url_dialog.open()
 
-                    # Manage Programmes Button
-                    ui.button(icon='layers', on_click='') \
+
+                    # View Entries Button
+                    ui.button(icon='layers', on_click=lambda: ui.run_javascript("window.location.href='/entries'")) \
                         .props('flat') \
-                        .tooltip('Manage Programmes') \
+                        .tooltip('View Entries') \
                         .classes('orientation-vertical justify-start')
                 
+                    ui.button(icon='settings', on_click='') \
+                        .props('flat') \
+                        .tooltip('View Entries') \
+                        .classes('orientation-vertical justify-start')
+                
+
+
                 # RIGHT Group
                 with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
 
@@ -154,7 +162,8 @@ def register_admin_ui():
                     #     .props('flat') \
                     
                     # Exit Button
-                    ui.button(icon='power_settings_new', on_click='') \
+                    ui.button(icon='power_settings_new', on_click=lambda: ui.run_javascript("window.location.href='/login'")) \
+                        .tooltip('Logout') \
                         .props('flat') \
 
             # Patient Cards Section

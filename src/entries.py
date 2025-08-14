@@ -41,6 +41,8 @@ def render_entry_card(entry, index, patient_name):
     with entries_container:
         with ui.card().classes('w-72 mb-4 p-4'):
             with ui.row().classes('w-full justify-start items-center'):
+                ui.element().style('position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; background-color: red; border-radius: 50%;')
+
                 print(f'Entry: {entry}')
                 ui.label(entry.get("time_of_entry", "Unknown"))
                 ui.space()
@@ -53,21 +55,52 @@ def render_entry_card(entry, index, patient_name):
             #     f'Tags: {", ".join(entry.get("tags", [{}]))}'
             # ).props('style="margin-top: 8px"').classes('text-sm')
             # more_text.set_visibility(False)
+            ui.label()
 
-            more_text = entry.get("tags") or {}
-            parts = []
-            if more_text.get("sentiment"):
-                parts.append(f"Sentiment: {more_text['sentiment']}")
-            if more_text.get("tone"):
-                parts.append("Tone: " + ", ".join(more_text["tone"]))
-            if more_text.get("keywords"):
-                parts.append("Keywords: " + ", ".join(more_text["keywords"]))
-            ui.label(" | ".join(parts) if parts else "No Tags") \
-               
+            # more_text = entry.get("tags") or {}
+            # parts = []
 
-            # more_text = ui.label(str(entry.get("tags":["tone"]) or "No Tags")) \
-            #     .props('style="margin-top: 8px"').classes('text-sm')
-            # more_text.set_visibility(False)
+            # ui.label(more_text['sentiment']).style('width: 100%; margin: 0; border: none; box-shadow: none; padding-top: 5px;').classes('rounded-lg gap-0')
+
+            # if more_text.get("sentiment"):
+            #     parts.append(f"Sentiment: {ui.label(more_text['sentiment']).style('width: 100%; margin: 0; border: none; box-shadow: none; padding-top: 5px;').classes('rounded-lg gap-0')}")
+            # if more_text.get("tone"):
+            #     parts.append("Tone: " + ", ".join(more_text["tone"]))
+            # if more_text.get("keywords"):
+            #     parts.append("Keywords: " + ", ".join(more_text["keywords"]))
+            # ui.label(" | ".join(parts) if parts else "No Tags") \
+
+            taggers = ui.card().style('width: 100%; margin: 1; border: none; box-shadow: none; padding-top: 5px;').classes('rounded-lg gap-0')
+
+
+            text = entry.get("tags")
+            sentiment = text['sentiment'] if text else "No Tags"
+            if not text:
+                text = {'tone': [], 'keywords': []}
+            else:
+                tone = text.get('tone')
+                keywords = text.get('keywords')
+
+                with taggers:
+                    with ui.row():
+                        ui.label('Sentiment:').classes('text-s').style('line-height: 30px; text-align: center; white-space: nowrap; padding-right: 5px; padding-left: 5px;')
+                        ui.label(sentiment).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
+                        
+                    with ui.row():
+                        ui.label('Tone:').classes('text-s').style('line-height: 30px; text-align: center; white-space: nowrap; padding-right: 5px; padding-left: 5px;')
+                        for one in tone:
+                            ui.label(one).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
+
+                    with ui.row():
+                        ui.label('Keywords:').classes('text-s').style('line-height: 30px; text-align: center; white-space: nowrap; padding-right: 5px; padding-left: 5px;')
+                        for word in keywords:
+                            ui.label(word).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
+
+
+                # more_text = ui.label(str(entry.get("tags") if entry else "No Tags")) \
+                #     .props('style="margin-top: 8px"').classes('text-sm')
+                # more_text.set_visibility(True)
+                taggers.set_visibility(False)
 
             with ui.row().classes('w-full justify-between items-center mt-4'):
                 with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
