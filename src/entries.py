@@ -100,7 +100,7 @@ def render_entry_card(entry, index, patient_name):
                 # more_text = ui.label(str(entry.get("tags") if entry else "No Tags")) \
                 #     .props('style="margin-top: 8px"').classes('text-sm')
                 # more_text.set_visibility(True)
-                taggers.set_visibility(False)
+                taggers.set_visibility(True)
 
             with ui.row().classes('w-full justify-between items-center mt-4'):
                 with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
@@ -139,9 +139,12 @@ def register_entries_ui():
 
                         for doc in patient_docs:
                             print(f'Loaded doc: {doc}')
-                            for idx, entry in enumerate(doc.get("entries", [])):
-                                entry = normalize_entry(entry)
-                                render_entry_card(entry, idx, patient_name)
+                            entries = doc.get("entries", [])
+                            entries.sort(key=lambda x: x.get("time_of_entry", ""), reverse=True) 
+
+                            for idx, entry in enumerate(entries):
+                                display_idx = len(entries) - idx -1
+                                render_entry_card(normalize_entry(entry), display_idx, patient_name)
 
                     ui.button(patient_name).props('flat color=primary') \
                         .on_click(load_entries).classes('w-full').style('margin: 0; padding: 8px;')
