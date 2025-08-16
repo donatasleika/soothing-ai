@@ -180,7 +180,19 @@ def register_submit_ui():
                             ui.notify(f"Submitted")
                             print("Captured input:", input_box.value)
                             input_box.value = ''
-                            
+
+
+
+                            local_time = await ui.run_javascript('''
+                                (() => {
+                                    const d = new Date();
+                                    const pad = n => n.toString().padStart(2, '0');
+                                    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} `
+                                        + `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                                })()
+                            ''')
+
+
                             client_name = mongodb_db.client_data['client_name']
 
                             client_data = {
@@ -205,7 +217,8 @@ def register_submit_ui():
                                  # Need to edit this. It's not important to have the client ID here (maybe)
                                 'entry_id': int(new_entry_id),
                                 'patient_id': patient_id,
-                                'time_of_entry': str(datetime.now().strftime("%Y-%m-%d %H:%M")),
+                                # 'time_of_entry': str(datetime.now().strftime("%Y-%m-%d %H:%M")),
+                                'time_of_entry': local_time,
                                 'patient_name': p_name,
                                   # This should be dynamic based on the patient
                                 'description': message_text,
