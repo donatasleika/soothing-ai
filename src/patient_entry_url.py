@@ -5,6 +5,7 @@ from .route_schema import get_shared_state
 from pymongo.mongo_client import MongoClient
 from . import mongodb_db
 from datetime import datetime
+import test_llm
 
 import httpx
 import asyncio
@@ -187,10 +188,22 @@ def register_submit_ui():
                                 'client_id': 1234, # Need to edit this. It's not important to have the client ID here (maybe)
                             }
                             print(client_name)
+                            
+                            
+                            tags = test_llm.extract_content(message_text)
+                            print(tags)
+
+                            entries = (mongodb_db.find_entries(p_name)[0]["entries"])
+                            # for x in entries:
+                            #     print(f'Entry: {x[0]}')
+
+                            print(f'pewp: {len(entries)}')
+
+                            new_entry_id = len(entries) + 1 if entries else 1
 
                             entry_data = {
                                  # Need to edit this. It's not important to have the client ID here (maybe)
-                                'entry_id': 1,
+                                'entry_id': int(new_entry_id),
                                 'patient_id': patient_id,
                                 'time_of_entry': str(datetime.now().strftime("%Y-%m-%d %H:%M")),
                                 'patient_name': p_name,
@@ -199,8 +212,10 @@ def register_submit_ui():
                                 'token': usable_token,
                             }
 
+                            tag_data = tags
 
-                            mongodb_db.insert_one_entry(client_data, entry_data)
+
+                            mongodb_db.insert_one_entry(client_data, entry_data, tag_data)
 
 
                             # total_entries = mongodb_db.check_num_entries(client_data, patient_data)

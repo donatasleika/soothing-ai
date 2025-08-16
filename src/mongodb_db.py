@@ -148,12 +148,15 @@ def insert_one_patient(client_data, patient_data):
 
 # Need a counter for total and a +1 entry counter   
 
-def insert_one_entry(client_data, entry_data):
+def insert_one_entry(client_data, entry_data, tag_data):
     collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
+    
+    full_entry = {**entry_data, "tags":tag_data}
+    
     collection.update_one(
         {"patient_name": entry_data["patient_name"]},
         {"$push": {
-            "entries": entry_data}},
+            "entries": full_entry}},
         upsert=True
     )
     print("Entry has been uploaded")
