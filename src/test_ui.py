@@ -46,6 +46,9 @@ async def create_private_url(patient_name: str, patient_id: str) -> str:
 
     return f'{base_url}/{normalized}/{token}'
 
+
+
+
 def register_admin_ui():
     @ui.page('/')
     async def main(patient_name: str = patient_state_name.patient_name, total_entries: int = 0, client_name: str = client_name):
@@ -149,7 +152,7 @@ def register_admin_ui():
                 
                     ui.button(icon='settings', on_click='') \
                         .props('flat') \
-                        .tooltip('View Entries') \
+                        .tooltip('Manage Programmes') \
                         .classes('orientation-vertical justify-start')
                 
 
@@ -202,8 +205,28 @@ def register_admin_ui():
                                             with ui.card().classes('rounded-lg').style('width: 80px; height: 30px; background-color: white; border: 1px solid black; box-shadow: none; padding: 0; display: flex; align-items: center; justify-content: center;'):
                                                 ui.link(f'{total_entries} Entries').classes('text-xs text-blue-500 underline').style('line-height: 30px; text-align: center; width: 100%;')
                                             
-                                            ui.element().style('position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background-color: red; border-radius: 50%;')
-                                        
+
+                                            docs = mongodb_db.find_read_entries(client_data, patient_name)
+                                            if docs:
+                                                print(f'yep:  {len(docs)}')
+                                            else:
+                                                print('No documents with read entries')
+                                             
+                                             
+                                            count = 42  # your variable
+
+                                            if docs and len(docs) > 0:
+                                                # Display the count in a small red circle
+                                                docs = len(docs)
+
+                                                with ui.element().style(
+                                                    'position: absolute; top: -8px; right: -5px; '
+                                                    'width: 18px; height: 18px; background-color: red; border-radius: 50%; '
+                                                    'display: flex; align-items: center; justify-content: center;'
+                                                ):
+                                                    ui.label(str(docs)).style('color: white; font-size: 12px;')
+                                                # ui.element().style('position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background-color: red; border-radius: 50%;')
+                                            
                                         # Burger Menu
                                         # with ui.element('q-fab').props('icon=menu').classes('text-h7').style('color: black;'):
                                         with ui.dropdown_button().props('flat color=black').classes('text-h7 justify-end').style('color: black;'):

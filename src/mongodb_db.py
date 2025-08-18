@@ -1,5 +1,6 @@
 from pymongo.mongo_client import MongoClient
 import ssl
+from datetime import datetime
 
 cluster = MongoClient("mongodb+srv://donatas:Meileyracia42@cluster0.v4cy82i.mongodb.net/?retryWrites=true&w=majority", tls=True, tlsAllowInvalidCertificates=True)
 db = cluster["Cluster0"]
@@ -130,7 +131,38 @@ def find_all_patients(client_data: dict):
     #     # projects["entries": []] = result
     #     print(result)
     
-    
+def read_receipts(patient_data, entry_data):
+        collection_name = f"{patient_data['client_name']}_{patient_data['client_id']}_Patients"
+        collection = db[collection_name]
+
+        res = collection.update_one(
+            {
+                "patient_name": entry_data["patient_name"],
+                "entries.entry_id": entry_data["entry_id"],
+            },
+            {
+                "$set": {
+                    "entries.$.read": True,
+                    "entries.$.read_at": datetime.utcnow(),
+                }
+            },
+            upsert=False,
+        )
+        # Optional: return a boolean for the caller
+        return res.matched_count == 1 and res.modified_count >= 1
+
+def collection_name_for(cd) -> str:
+    return f"{cd['client_name']}_{cd['client_id']}_Patients"  # preserves spaces in client_name
+
+def find_read_entries(client_data, patient_name: str):
+    coll = db[collection_name_for(client_data)]
+    pipeline = [
+        {"$match": {"patient_name": patient_name}},
+        {"$unwind": "$entries"},
+        {"$match": {"entries.read": False}},  # boolean True
+        {"$replaceRoot": {"newRoot": "$entries"}},
+    ]
+    return list(coll.aggregate(pipeline))
 
 
 def insert_one_patient(client_data, patient_data):
@@ -146,7 +178,9 @@ def insert_one_patient(client_data, patient_data):
     print("Data has been uploaded")
 
 
-# Need a counter for total and a +1 entry counter   
+# Need a counter for total and a +1 entry counter
+    
+
 
 def insert_one_entry(client_data, entry_data, tag_data):
     collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
