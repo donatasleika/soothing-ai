@@ -7,6 +7,7 @@ import os
 from types import SimpleNamespace
 from .route_schema import set_shared_state, get_shared_state
 patient_state_name = SimpleNamespace(patient_name=None)
+from urllib.parse import quote
 # patient_name = 'Donatas Leika'
 total_url_tokens = []
 new_url_usable = []
@@ -200,10 +201,12 @@ def register_admin_ui():
                                     with ui.row().classes('justify-end gap-2'):
                                         ui.label('|').classes('text-h5')
 
+                                        normalized = client_name.replace(' ', '-').lower()
+
                                         # Entries
                                         with ui.element().style('position: relative; display: inline-block;'):
                                             with ui.card().classes('rounded-lg').style('width: 80px; height: 30px; background-color: white; border: 1px solid black; box-shadow: none; padding: 0; display: flex; align-items: center; justify-content: center;'):
-                                                ui.link(f'{total_entries} Entries').classes('text-xs text-blue-500 underline').style('line-height: 30px; text-align: center; width: 100%;')
+                                                ui.link(f'{total_entries} Entries', target=f"/{normalized}/entries/{quote(patient_name)}").classes('text-xs text-blue-500 underline').style('line-height: 30px; text-align: center; width: 100%;')
                                             
 
                                             docs = mongodb_db.find_read_entries(client_data, patient_name)

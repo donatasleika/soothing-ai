@@ -196,20 +196,22 @@ def register_entries_ui():
                         # ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg')
                     entries_container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
                     
-ROUTE_PATIENT_PAGE = f'/{normalized_name}/entries/{selected_patient["name"]}'
+ROUTE_PATIENT_PAGE = f'/{normalized_name}/entries/{{patient_name}}'
 
 @ui.page(ROUTE_PATIENT_PAGE)
 def patient_entries(patient_name: str):
+    global entries_container
+    # build a container that belongs to THIS page
+    entries_container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
+
     selected_patient['name'] = patient_name
     patient_docs = mongodb_db.find_entries(patient_name)
-    entries_container.clear()
 
-    for doc in patient_docs:
+    for doc in patient_docs or []:
         entries = doc.get("entries", [])
-        entries.sort(key=lambda x: x.get("time_of_entry", ""), reverse=True) 
-
+        entries.sort(key=lambda x: x.get("time_of_entry", ""), reverse=True)
         for idx, entry in enumerate(entries):
-            display_idx = len(entries) - idx -1
+            display_idx = len(entries) - idx - 1
             render_entry_card(normalize_entry(entry), display_idx, patient_name)
 
         # ui.run(port=8081, title='Soothing AI - Entries', reload=True, favicon='', dark=False)
