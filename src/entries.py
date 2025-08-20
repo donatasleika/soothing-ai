@@ -24,25 +24,52 @@ def normalize_entry(entry):
     else:
         return entry
     
+def mark_entry_read(patient_name: str, entry_id: int) -> bool:
+    """Delegate to mongodb_db.read_receipts using only patient_name, client_data, entry_id."""
+    return mongodb_db.read_receipts(
+        client_data,
+        {"patient_name": patient_name, "entry_id": entry_id},
+    )
 
 
 def render_entry_card(entry, index, patient_name):
     """Renders a single journal entry card."""
-    show_more = False
+    show_more = True
+    opened_once = True
+    unread = not entry.get("read", False)
+    close_dot = None
 
     def toggle():
-        nonlocal show_more
+        nonlocal show_more, opened_once, unread
         show_more = not show_more
-        more_text.set_visibility(show_more)
+        taggers.set_visibility(show_more)
         toggle_button.set_text('Show Less' if show_more else 'Show More')
+
+        if show_more:
+            opened_once = True
+        else:
+            # collapsed; if it was unread and has been opened, mark read and remove dot
+            if not show_more and unread:   # collapsing now
+                try:
+                    mark_entry_read(patient_name, entry["entry_id"])
+                    unread = False
+                    entry["read"] = True
+                    if close_dot:
+                        close_dot.delete()
+                except Exception as e:
+                    print(f"Failed to mark read for entry_id={entry.get('entry_id')}: {e}")
+
 
     # Visualize the individual entries
 
     with entries_container:
         with ui.card().classes('w-72 mb-4 p-4'):
             with ui.row().classes('w-full justify-start items-center'):
-                ui.element().style('position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; background-color: red; border-radius: 50%;')
-
+                if unread:
+                    close_dot = ui.element().style(
+                        'position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; '
+                        'background-color: red; border-radius: 50%;'
+                    )
                 print(f'Entry: {entry}')
                 ui.label(entry.get("time_of_entry", "Unknown"))
                 ui.space()
@@ -105,24 +132,29 @@ def render_entry_card(entry, index, patient_name):
             with ui.row().classes('w-full justify-between items-center mt-4'):
                 with ui.element('div').classes('w-6 h-6 rounded-full border border-black flex items-center justify-center').style('margin-left: 5px;'):
                     ui.label(str(index+1)).classes('text-sm p-0 m-0 text-bold')
-                toggle_button = ui.button('Show More', on_click=toggle).props('flat color=primary').classes('text-sm justify-end')
+                toggle_button = ui.button('Show Less', on_click=lambda: (toggle(), close_dot.delete())).props('flat color=primary').classes('text-sm justify-end')
+
+normalized_name = client_data['client_name'].lower().replace(' ', '-')
+ROUTE_CLIENT = f'/{normalized_name}/entries'
+
 
 def register_entries_ui():
-    @ui.page('/entries')
+    @ui.page(ROUTE_CLIENT)
     def main():
-        ui.add_body_html('''
-        <style>
-        * {
-            margin: 0 !important;
-            padding: 0 !important;
-            box-sizing: border-box;
-        }
-        </style>
-        ''')
+            ui.add_body_html('''
+            <style>
+            * {
+                margin: 1 !important;
+                padding: 1 !important;
+                box-sizing: border-box;
+            }
+            </style>
+            ''')
 
-        with ui.row().classes('w-full h-screen flex-nowrap items-stretch'):
+        # with ui.row().classes('w-full h-screen flex-nowrap items-stretch'):
             # Sidebar
-            with ui.element('aside').classes('w-60 h-full bg-gray-100').style('padding: 0; margin-right: 5px; display: flex; flex-direction: column; gap: 0;'):
+            # with ui.element('aside').classes('w-60 h-full bg-gray-100').style('padding: 0; margin-right: 5px; display: flex; flex-direction: column; gap: 0;'):
+            with ui.left_drawer(top_corner=True, bottom_corner=True).classes('w-60 h-full bg-gray-100').style('padding: 0; margin-right: 5px; display: flex; flex-direction: column; gap: 0;'):
                 with ui.row().classes('justify-center'):
                     # ui.label('Patients').classes('text-lg font-bold mb-2')
                     ui.label('')
@@ -148,7 +180,11 @@ def register_entries_ui():
 
                     ui.button(patient_name).props('flat color=primary') \
                         .on_click(load_entries).classes('w-full').style('margin: 0; padding: 8px;')
-
+                    
+                    # for p in patients:
+                    #     ui.button(p['patient_name']).props('flat color=primary') \
+                    #         .on_click(lambda p=p: ui.open(f"/entries/{p['patient_name']}")) \
+                    #         .classes('w-full')
     
             with ui.column().classes('flex-1 min-w-0 h-full p-6 overflow-auto'):
                 # with ui.card().classes('w-full'):
@@ -160,6 +196,22 @@ def register_entries_ui():
                         # ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg')
                     entries_container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
                     
+ROUTE_PATIENT_PAGE = f'/{normalized_name}/entries/{selected_patient["name"]}'
 
+@ui.page(ROUTE_PATIENT_PAGE)
+def patient_entries(patient_name: str):
+    selected_patient['name'] = patient_name
+    patient_docs = mongodb_db.find_entries(patient_name)
+    entries_container.clear()
+
+    for doc in patient_docs:
+        entries = doc.get("entries", [])
+        entries.sort(key=lambda x: x.get("time_of_entry", ""), reverse=True) 
+
+        for idx, entry in enumerate(entries):
+            display_idx = len(entries) - idx -1
+            render_entry_card(normalize_entry(entry), display_idx, patient_name)
+
+        # ui.run(port=8081, title='Soothing AI - Entries', reload=True, favicon='', dark=False)
 
     # ui.run(port=8081, title='Soothing AI - Entries', reload=True, favicon='', dark=False)
