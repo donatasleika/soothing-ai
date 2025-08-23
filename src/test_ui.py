@@ -26,10 +26,17 @@ def get_base_url():
 
 def new_patient_id() -> str:
     current_patients = mongodb_db.find_all_patients(client_data=client_data)
-    print(len(current_patients))
-
-
-    return str(len(current_patients) + 1) if current_patients else '1'
+    used = set()
+    for p in current_patients:
+        v = p.get('_id')
+        if isinstance(v, int):
+            used.add(v)
+        elif isinstance(v, str) and v.isdigit():
+            used.add(int(v))
+    i = 1
+    while i in used:
+        i += 1
+    return str(i)
 
 
 # Check for tokens in the database

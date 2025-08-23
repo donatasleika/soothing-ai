@@ -223,6 +223,7 @@ def register_submit_ui():
                                   # This should be dynamic based on the patient
                                 'description': message_text,
                                 'token': usable_token,
+                                'read': False,
                             }
 
                             tag_data = tags
