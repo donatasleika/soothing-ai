@@ -245,7 +245,7 @@ def register_admin_ui():
                                                 ui.button('Delete Patient').on_click(lambda c=patient_card, pid=patient_id: delete_patient(c, pid)).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px; justify-content: flex-start; text-align: left;').classes('text-[9px] w-full q-pa-none')
                                             # ui.button(icon='menu').classes('text-h7').props('flat').style('foreground-color: black;')
                                         
-
+ 
                                 ui.separator()
 
                                 # Sentiment Thermometer
