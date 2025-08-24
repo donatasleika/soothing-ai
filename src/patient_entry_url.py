@@ -202,8 +202,8 @@ def register_submit_ui():
                             print(client_name)
                             
                             
-                            tags = test_llm.extract_content(message_text)
-                            print(tags)
+                            # tags = test_llm.extract_content(message_text)
+                            # print(tags)
 
                             entries = (mongodb_db.find_entries(p_name)[0]["entries"])
                             # for x in entries:
@@ -226,7 +226,7 @@ def register_submit_ui():
                                 'read': False,
                             }
 
-                            tag_data = tags
+                            tag_data = {'sentiment': ['sample'], 'tone': ['sample', 'sample'], 'keywords': ['sample', 'sample']}
 
 
                             mongodb_db.insert_one_entry(client_data, entry_data, tag_data)
