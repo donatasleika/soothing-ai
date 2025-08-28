@@ -70,7 +70,8 @@ def register_entries_ui():
         with ui.row().classes('w-full h-screen'):
             # Sidebar
             with ui.element('aside').classes('w-60 h-full bg-gray-100').style('padding: 0; margin-right: 5px; display: flex; flex-direction: column; gap: 0;'):
-                ui.label('Patients').classes('text-lg font-bold mb-2')
+                with ui.row().classes('justify-center'):
+                    ui.label('Patients').classes('text-lg font-bold mb-2')
                 patients = mongodb_db.find_all_patients(client_data)
 
                 for patient in patients:
