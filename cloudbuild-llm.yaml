@@ -1,0 +1,47 @@
+# cloudbuild-llm.yaml
+# Build & deploy the LLM service (llm-service/) to Cloud Run
+# Place this at the root of your soothing-ai repo
+
+substitutions:
+  _REGION: europe-west1
+  _SERVICE: llama-cpu
+  _REPO: llm-repo
+  _IMAGE: llama-cpu
+  _MODEL_URL: gs://my-llama-models-eu/llama3.1-8b-q4km@2025-08-12.gguf
+  _SA: llm-model-reader@fluted-haven-467020-v1.iam.gserviceaccount.com
+
+steps:
+  # Build the llm-service Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    dir: "llm-service"
+    args:
+      [
+        "build",
+        "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA",
+        "."
+      ]
+
+  # Push the image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      ["push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA"]
+
+  # Deploy to Cloud Run (private)
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      [
+        "run","deploy","${_SERVICE}",
+        "--image","${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA",
+        "--region","${_REGION}",
+        "--cpu","2",
+        "--memory","4Gi",
+        "--service-account","${_SA}",
+        "--set-env-vars","MODEL_URL=${_MODEL_URL}",
+        "--min-instances","1",
+        "--no-allow-unauthenticated",
+        "--project","$PROJECT_ID"
+      ]
+
+images:
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA"
