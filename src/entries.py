@@ -91,7 +91,8 @@ def register_entries_ui():
             # Main content area
             with ui.column().classes('flex-grow h-full p-6'):
                 # ui.label('Entries').classes('text-2xl')
-                ui.space()
+                with ui.row():
+                    print('')
                 global entries_container
                 with ui.row().classes('w-full justify-between items-center').style('margin-bottom: 20px;'):
                     # ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg')
