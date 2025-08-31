@@ -7,7 +7,7 @@ substitutions:
   _SERVICE: llama-cpu
   _REPO: llm-repo
   _IMAGE: llama-cpu
-  _MODEL_URL: gs://my-llama-models-eu/llama3.1-8b-q4km@2025-08-12.gguf
+  _MODEL_URL: gs://my_models/llama3.1-8b-q4km@2025-08-12.gguf
   _SA: llm-model-reader@fluted-haven-467020-v1.iam.gserviceaccount.com
 
 steps:
