@@ -1,32 +1,23 @@
-# cloudbuild-llm.yaml
-# Build & deploy the LLM service (llm-service/) to Cloud Run
-# Place this at the root of your soothing-ai repo
+# Build & deploy LLM (llm-service/) to Cloud Run with a GCS mount
+# Place at repo root. Trigger on changes to llm-service/**
 
 substitutions:
   _REGION: europe-west1
   _SERVICE: llama-cpu
   _REPO: llm-repo
   _IMAGE: llama-cpu
-  _MODEL_URL: gs://my_models/llama3.1-8b-q4km@2025-08-12.gguf
+  _BUCKET: gs://my_models         # underscore is OK for mounting
+  _MOUNT_PATH: /models            # visible path inside the container
   _SA: llm-model-reader@fluted-haven-467020-v1.iam.gserviceaccount.com
 
 steps:
-  # Build the llm-service Docker image
   - name: "gcr.io/cloud-builders/docker"
     dir: "llm-service"
-    args:
-      [
-        "build",
-        "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA",
-        "."
-      ]
+    args: ["build", "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA", "."]
 
-  # Push the image to Artifact Registry
   - name: "gcr.io/cloud-builders/docker"
-    args:
-      ["push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA"]
+    args: ["push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA"]
 
-  # Deploy to Cloud Run (private)
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
     args:
@@ -35,11 +26,14 @@ steps:
         "--image","${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:$SHORT_SHA",
         "--region","${_REGION}",
         "--cpu","2",
-        "--memory","4Gi",
+        "--memory","8Gi",
+        "--timeout","900",
         "--service-account","${_SA}",
-        "--set-env-vars","MODEL_URL=${_MODEL_URL}",
-        "--min-instances","1",
+        "--ingress","internal-and-cloud-load-balancing",
         "--no-allow-unauthenticated",
+        "--min-instances","1",
+        "--set-env-vars","MODEL_DIR=${_MOUNT_PATH}",
+        "--mount","type=gcs,src=${_BUCKET},target=${_MOUNT_PATH},readonly=true",
         "--project","$PROJECT_ID"
       ]
 
