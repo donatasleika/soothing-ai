@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Body, HTTPException
 import requests, json, os, pathlib
 
-LLAMA = "http://127.0.0.1:8081/completion"
+LLAMA = "http://127.0.0.1:8080/completion"
 # GBNF = pathlib.Path("schema.gbnf").read_text()
 
 app = FastAPI()
@@ -10,7 +10,7 @@ app = FastAPI()
 def health():
     # best-effort health check
     try:
-        r = requests.get("http://127.0.0.1:8081/props", timeout=2)
+        r = requests.get("http://127.0.0.1:8080/props", timeout=2)
         r.raise_for_status()
         return {"ok": True}
     except Exception as e:
