@@ -1,4 +1,3 @@
-# api.py
 from fastapi import FastAPI, Body, HTTPException
 import requests, json, os
 
@@ -13,7 +12,6 @@ def healthz():
         r.raise_for_status()
         return {"ok": True}
     except Exception as e:
-        # Don't crash the container; report not ready
         raise HTTPException(status_code=503, detail=f"llama not ready: {e}")
 
 @app.post("/extract")
@@ -21,34 +19,19 @@ def extract(text: str = Body(..., embed=True)):
     prompt = (
         "Extract only JSON from the entry. "
         "Extract the sentiment and emotional tone of the entry. "
-        "Decide if statements show a positive, neutral, or negative side. "
-        'Respond with JSON only in the shape {"sentiment": "...", "tone": "...", "keywords": ["..."]}. '
+        'Respond with JSON only as {"sentiment":"positive|neutral|negative","tone":"...","keywords":["..."]}. '
         f"Text:\n{text}\nJSON:"
     )
-
     try:
-        # llama.cpp server (classic) -> /completion with {"prompt": ...}
         rr = requests.post(
             LLAMA_URL + "/completion",
-            json={
-                "prompt": prompt,
-                "n_predict": 64,
-                "temperature": 0.0,
-                "top_k": 1,
-            },
-            timeout=30,
+            json={"prompt": prompt, "n_predict": 64, "temperature": 0.0, "top_k": 1},
+            timeout=45,
         )
         rr.raise_for_status()
         data = rr.json()
-
-        # Typical llama.cpp /completion returns {"content": "..."}; adjust if your build differs
         content = data.get("content", "")
-        # Try to parse the JSON from the content; fall back with a clear error
-        parsed = json.loads(content)
-        # Basic shape check
-        if not isinstance(parsed, dict) or "sentiment" not in parsed:
-            raise ValueError("Model response missing expected keys")
-        return parsed
+        return json.loads(content)
     except requests.HTTPError as e:
         raise HTTPException(status_code=rr.status_code, detail=rr.text)
     except Exception as e:
