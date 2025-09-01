@@ -14,7 +14,7 @@ def healthz():
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
     
-    
+
 @app.post("/extract")
 def extract(text: str = Body(..., embed=True)):
     prompt = (
