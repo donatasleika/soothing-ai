@@ -1,21 +1,20 @@
 from fastapi import FastAPI, Body, HTTPException
 import requests, json, os, pathlib
 
-LLAMA = "http://127.0.0.1:8080/completion"
-# GBNF = pathlib.Path("schema.gbnf").read_text()
-
 app = FastAPI()
+LLAMA_PORT = int(os.environ.get("LLAMA_PORT", "8081"))
+LLAMA_URL = f"http://127.0.0.1:{LLAMA_PORT}"
 
 @app.get("/healthz")
-def health():
-    # best-effort health check
+def healthz():
     try:
-        r = requests.get("http://127.0.0.1:8080/props", timeout=2)
+        r = requests.get(LLAMA_URL + "/", timeout=2)
         r.raise_for_status()
         return {"ok": True}
     except Exception as e:
-        raise HTTPException(503, f"llama-server not ready: {e}")
-
+        raise HTTPException(status_code=503, detail=str(e))
+    
+    
 @app.post("/extract")
 def extract(text: str = Body(..., embed=True)):
     prompt = (

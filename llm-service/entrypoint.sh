@@ -1,48 +1,35 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-# REQUIRED: set MODEL_URL via Cloud Run env var, e.g.
-# gs://my-llama-models-eu/llama3.1-8b-q4km@2025-08-12.gguf
-: "${MODEL_URL:?Set MODEL_URL to gs://bucket/path/model.gguf}"
+# Cloud Run provides $PORT. Default to 8080 locally.
+PORT="${PORT:-8080}"
+LLAMA_PORT="${LLAMA_PORT:-8081}"
+MODEL_DIR="${MODEL_DIR:-/models}"
+MODEL_FILE="${MODEL_FILE:-model.gguf}"
+MODEL_PATH="${MODEL_DIR}/${MODEL_FILE}"
 
-MODEL_DIR="/my_models"
-MODEL_PATH="${MODEL_DIR}/model.gguf"
-export MODEL_PATH
+# Start llama-server on an internal port (LLAMA_PORT)
+# NOTE: binary path in the base image is usually /usr/local/bin/llama-server
+/usr/local/bin/llama-server \
+  --model "${MODEL_PATH}" \
+  --host 0.0.0.0 \
+  --port "${LLAMA_PORT}" \
+  --ctx-size 4096 \
+  --parallel 1 \
+  --mlock \
+  --no-webui \
+  &
+LLAMA_PID=$!
 
-CTX="${CTX:-8192}"
+# Simple wait-for on llama-server
+echo "Waiting for llama-server on :${LLAMA_PORT}..."
+for i in {1..60}; do
+  if curl -fsS "http://127.0.0.1:${LLAMA_PORT}/" >/dev/null 2>&1; then
+    echo "llama-server is up."
+    break
+  fi
+  sleep 1
+done
 
-mkdir -p "$MODEL_DIR"
-
-echo "[startup] ensuring model exists at $MODEL_PATH ..."
-if [ ! -f "$MODEL_PATH" ]; then
-  echo "[startup] downloading from ${MODEL_URL} via google-cloud-storage"
-  python3 - <<'PY'
-import os, sys
-from urllib.parse import urlparse
-from google.cloud import storage
-
-model_url = os.environ["MODEL_URL"]
-dest = os.environ["MODEL_PATH"]
-
-parsed = urlparse(model_url)
-if parsed.scheme != "gs":
-    sys.exit(f"MODEL_URL must be gs://..., got: {model_url}")
-
-bucket_name = parsed.netloc
-blob_name = parsed.path.lstrip("/")
-
-client = storage.Client()  # uses ADC / Cloud Run SA
-bucket = client.bucket(bucket_name)
-blob = bucket.blob(blob_name)
-
-os.makedirs(os.path.dirname(dest), exist_ok=True)
-blob.download_to_filename(dest)
-print(f"[startup] downloaded {bucket_name}/{blob_name} -> {dest}")
-PY
-fi
-
-echo "[startup] launching llama-server..."
-/llama-server -m "$MODEL_PATH" -c "$CTX" --port 8081 &
-
-echo "[startup] launching FastAPI proxy..."
-uvicorn api:app --host 0.0.0.0 --port 8080
+# Exec uvicorn so it becomes PID 1 and receives signals properly
+exec python3 -m uvicorn api:app --host 0.0.0.0 --port "${PORT}"
