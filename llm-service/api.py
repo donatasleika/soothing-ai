@@ -1,8 +1,15 @@
 from fastapi import FastAPI, Body, HTTPException
+from fastapi.responses import PlainTextResponse
 import requests, json, os
 app = FastAPI()
 LLAMA_PORT = int(os.environ.get("LLAMA_PORT", "8081"))
 LLAMA_URL = f"http://127.0.0.1:{LLAMA_PORT}"
+
+
+@app.get("/", response_class=PlainTextResponse)
+def root():
+    return "llama-cpu alive"
+
 
 @app.get("/healthz")
 def healthz():
