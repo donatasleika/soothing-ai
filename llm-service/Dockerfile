@@ -7,8 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN git clone https://github.com/ggml-org/llama.cpp.git /llama
 WORKDIR /llama
 # Build the server target
-RUN cmake -S . -B build -DLLAMA_SERVER=ON -DCMAKE_BUILD_TYPE=Release \
- && cmake --build build -j
+RUN cmake -S . -B build -DLLAMA_SERVER=ON -DLLAMA_CURL=OFF -DCMAKE_BUILD_TYPE=Release \
+ && cmake --build build -j --target llama-server
 # Install the server binary into a standard path
 RUN install -m 0755 build/bin/llama-server /usr/local/bin/llama-server
 
