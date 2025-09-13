@@ -237,7 +237,7 @@ def register_admin_ui():
                                                     ui.label(str(docs)).style('color: white; font-size: 12px;')
                                                 # ui.element().style('position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background-color: red; border-radius: 50%;')
                                             
-                                        # Burger Menu
+                                        # Burger Menu 
                                         # with ui.element('q-fab').props('icon=menu').classes('text-h7').style('color: black;'):
                                         with ui.dropdown_button().props('flat color=black').classes('text-h7 justify-end').style('color: black;'):
                                             with ui.column().classes('gap-0'):
