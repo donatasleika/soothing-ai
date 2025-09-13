@@ -10,8 +10,9 @@ echo "[boot] PORT=$PORT  LLAMA_PORT=$LLAMA_PORT"
 echo "[boot] listing $MODEL_DIR"; ls -lah "$MODEL_DIR" || true
 
 # 1) Start API first so Cloud Run sees a listener
-python3 -m uvicorn api:app --host 0.0.0.0 --port "$PORT" &
-API_PID=$!
+python3 -m uvicorn api:app \
+  --host 0.0.0.0 --port "$PORT" \
+  --proxy-headers --forwarded-allow-ips="*"
 
 # 2) Start llama-server if present
 LLAMA_BIN="$(command -v llama-server || true)"
