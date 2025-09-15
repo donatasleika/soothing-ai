@@ -9,7 +9,9 @@ RUN cmake -S . -B build \
       -DLLAMA_SERVER=ON \
       -DGGML_STATIC=ON \
       -DGGML_CURL=OFF \
-      -DGGML_METAL=OFF -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_OPENCL=OFF \
+      -DLLAMA_CURL=OFF \
+      -DLLAMA_BUILD_EXAMPLES=OFF \
+      -DLLAMA_BUILD_TESTS=OFF \
   && cmake --build build -j \
   && cmake --install build
 
