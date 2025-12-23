@@ -1,0 +1,10 @@
+venv/
+src/__pycache__/
+.nicegui/
+llm/
+test_llm.py
+__pycache__/
+convert_llama_weights_to_hf.py
+llama.cpp/
+schema.gbnf
+.env
