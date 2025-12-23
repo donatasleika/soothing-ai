@@ -6,9 +6,14 @@ import json
 import os
 from types import SimpleNamespace
 from .route_schema import set_shared_state, get_shared_state
-patient_state_name = SimpleNamespace(patient_name=None)
 from urllib.parse import quote
+
+
+patient_state_name = SimpleNamespace(patient_name=None)
+
 # patient_name = 'Donatas Leika'
+
+
 total_url_tokens = []
 new_url_usable = []
 client_name = 'Joe Hudson'
@@ -342,8 +347,8 @@ def register_admin_ui():
                     
         await populate_patient_cards() 
 
-    secret_key = secrets.token_hex(16)
+secret_key = secrets.token_hex(16)
 
 
-    # if __name__ == '__main__':
-    # ui.run(storage_secret=secret_key, port=8080, title='Soothing AI - Patient Management', favicon='https://example.com/favicon.ico', dark=False, reload=True)
+# if __name__ == '__main__':
+ui.run(storage_secret=secret_key, port=8080, title='Soothing AI - Patient Management', favicon='https://example.com/favicon.ico', dark=False, reload=True)

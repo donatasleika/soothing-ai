@@ -1,8 +1,13 @@
 from pymongo.mongo_client import MongoClient
 import ssl
 from datetime import datetime
+from dotenv import load_dotenv
 
-cluster = MongoClient("mongodb+srv://donatas:Meileyracia42@cluster0.v4cy82i.mongodb.net/?retryWrites=true&w=majority", tls=True, tlsAllowInvalidCertificates=True)
+load_dotenv()
+
+MONGO_CREDS = ["MONGO_CREDS"]
+
+cluster = MongoClient(f"mongodb+srv://{MONGO_CREDS}/?retryWrites=true&w=majority", tls=True, tlsAllowInvalidCertificates=True)
 db = cluster["Cluster0"]
 
 
@@ -39,7 +44,7 @@ entry_data = {
 collection = db[f"{client_data['client_name']}_{client_data['client_id']}_Patients"]
 
 
-def check_num_entries(client_data: dict, patient_data: dict):
+def check_num_entries(client_data: dict, patient_data: dict) -> None:
     total_entries = []
     collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
     collection = db[collection_name]
@@ -72,7 +77,7 @@ def check_url_tokens(new_url_token: str, client_data: dict) -> bool:
     }) is not None 
 
 
-def insert_client(client_name: str, client_id: str):
+def insert_client(client_name: str, client_id: str) -> None:
     collection_name = f"{client_name}_{client_id}_Patients"
     if collection_name not in db.list_collection_names():
         db.create_collection(collection_name)
@@ -95,7 +100,7 @@ def find_all_patient_ids():
 def find_clients(name: str):
     pass
 
-def find_patient(id: str):
+def find_patient(id: str) -> str:
     global projects
     result = collection.find_one({
         "_id": id
@@ -154,7 +159,7 @@ def read_receipts(patient_data, entry_data):
 def collection_name_for(cd) -> str:
     return f"{cd['client_name']}_{cd['client_id']}_Patients"  # preserves spaces in client_name
 
-def find_read_entries(client_data, patient_name: str):
+def find_read_entries(client_data, patient_name: str) -> list:
     coll = db[collection_name_for(client_data)]
     pipeline = [
         {"$match": {"patient_name": patient_name}},
@@ -162,7 +167,7 @@ def find_read_entries(client_data, patient_name: str):
         {"$match": {"entries.read": False}},  # boolean True
         {"$replaceRoot": {"newRoot": "$entries"}},
     ]
-    return list(coll.aggregate(pipeline))
+    return coll.aggregate(pipeline)
 
 
 def insert_one_patient(client_data, patient_data):

@@ -23,7 +23,7 @@ def normalize_entry(entry):
         return list(entry)
     else:
         return entry
-    
+
 def mark_entry_read(patient_name: str, entry_id: int) -> bool:
     """Delegate to mongodb_db.read_receipts using only patient_name, client_data, entry_id."""
     return mongodb_db.read_receipts(

@@ -45,4 +45,3 @@ ENV PATH="/opt/venv/bin:${PATH}"
 
 # Default entrypoint (Cloud Run will pass PORT)
 ENTRYPOINT ["/app/entrypoint.sh"]
-
