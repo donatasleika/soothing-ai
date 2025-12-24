@@ -53,6 +53,7 @@ RUN sed -i 's/\r$//' /app/entrypoint.sh \
  && chmod 755 /app/entrypoint.sh \
  && head -n 1 /app/entrypoint.sh
 
+RUN /bin/bash -lc 'head -n 1 /app/entrypoint.sh && test -x /app/entrypoint.sh'
 
 # Python deps in an isolated venv (no --break-system-packages)
 RUN python3 -m venv /opt/venv \
