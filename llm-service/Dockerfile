@@ -14,12 +14,11 @@ RUN cmake -S . -B build \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLAMA_BUILD_SERVER=ON \
       -DLLAMA_CURL=OFF \
-      -DBUILD_SHARED_LIBS=OFF \
-      -DGGML_OPENMP=OFF \
-      -DGGML_METAL=OFF -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_OPENCL=OFF \
-      -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
+      -DLLAMA_BUILD_TESTS=OFF \
+      -DLLAMA_BUILD_EXAMPLES=OFF \
   && cmake --build build --target llama-server -j \
   && cmake --install build
+
 
 
 
