@@ -17,7 +17,6 @@ RUN cmake -S . -B build \
       -DLLAMA_BUILD_TESTS=OFF \
       -DLLAMA_BUILD_EXAMPLES=OFF \
   && cmake --build build --target llama-server -j 1 \
-  && cmake --install build
 
 
 
@@ -41,13 +40,11 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
  && rm -rf /var/lib/apt/lists/*
 
 
-COPY --from=build /usr/local/lib/ /usr/local/lib/
-RUN ldconfig
+COPY --from=build /llama/build/bin/ /usr/local/lib/llama-bin/
+RUN find /usr/local/lib/llama-bin -maxdepth 1 -name "*.so*" -exec cp -v {} /usr/local/lib/ \; && ldconfig
+COPY --from=build /llama/build/bin/llama-server /usr/local/bin/llama-server
 
 
-# Copy the statically linked llama-server from build stage
-COPY --from=build /usr/local/bin/llama-server /usr/local/bin/llama-server
-RUN /usr/local/bin/llama-server --help
 
 
 # App
