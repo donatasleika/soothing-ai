@@ -25,7 +25,7 @@ FROM debian:12
 
 # Python + curl for simple probes; venv to avoid PEP 668 issues
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 python3-venv python3-pip ca-certificates curl gnupg \
+      bash python3 python3-venv python3-pip ca-certificates curl gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Google Cloud SDK (provides gsutil)

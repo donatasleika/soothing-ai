@@ -3,7 +3,7 @@ set -euo pipefail
 
 PORT="${PORT:-8080}"
 LLAMA_PORT="${LLAMA_PORT:-8081}"
-MODEL_DIR="${MODEL_DIR:-/models}"
+MODEL_DIR="${MODEL_DIR:-/my_models}"
 MODEL_FILE="${MODEL_FILE:-llama3.1-8b-q4km@2025-08-12.gguf}"
 MODEL_PATH="${MODEL_DIR}/${MODEL_FILE}"
 MODEL_GCS="${MODEL_GCS:-}"
