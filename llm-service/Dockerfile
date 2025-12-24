@@ -65,4 +65,4 @@ RUN /bin/sh -lc 'ls -lah /app && head -n 2 /app/entrypoint.sh'
 
 
 # Default entrypoint (Cloud Run will pass PORT)
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
