@@ -1,49 +1,51 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 PORT="${PORT:-8080}"
 LLAMA_PORT="${LLAMA_PORT:-8081}"
 MODEL_PATH="${MODEL_PATH:-/models/llama3.1-8b-q4km@2025-08-12.gguf}"
+LOCAL_MODEL="/tmp/model.gguf"
 
 echo "[boot] PORT=$PORT LLAMA_PORT=$LLAMA_PORT MODEL_PATH=$MODEL_PATH"
-echo "[boot] which llama-server: $(command -v llama-server || true)"
-ls -lah /models || true
+ls -lah "$(dirname "$MODEL_PATH")" || true
 
-if [[ -f "$MODEL_PATH" ]]; then
-  echo "[boot] starting llama-server..."
-  /usr/local/bin/llama-server \
-    -m "$MODEL_PATH" \
-    --host 127.0.0.1 \
-    --port "$LLAMA_PORT" \
-    -c 2048 \
-    --no-webui \
-    >/tmp/llama.log 2>&1 &
-  LLAMA_PID=$!
-  sleep 1
+# 1) Start llama-server (but only after copying model locally)
+echo "[boot] copying model to local disk: $LOCAL_MODEL"
+cp -f "$MODEL_PATH" "$LOCAL_MODEL"
+ls -lah "$LOCAL_MODEL"
+
+echo "[boot] starting llama-server..."
+/usr/local/bin/llama-server \
+  -m "$LOCAL_MODEL" \
+  --host 127.0.0.1 \
+  --port "$LLAMA_PORT" \
+  --no-webui \
+  --no-mmap \
+  -c 2048 \
+  > /tmp/llama.log 2>&1 &
+LLAMA_PID=$!
+
+# Stream llama logs to Cloud Run logs
+tail -n +1 -F /tmp/llama.log &
+TAIL_PID=$!
+
+# 2) Wait until llama responds 200 on "/"
+echo "[boot] waiting for llama-server..."
+for i in $(seq 1 120); do
+  if curl -fsS "http://127.0.0.1:${LLAMA_PORT}/" >/dev/null 2>&1; then
+    echo "[boot] llama-server ready"
+    break
+  fi
   if ! kill -0 "$LLAMA_PID" 2>/dev/null; then
     echo "[boot][ERROR] llama-server exited"
     tail -n 200 /tmp/llama.log || true
-  else
-    echo "[boot] llama-server pid=$LLAMA_PID"
+    exit 1
   fi
-else
-  echo "[boot][ERROR] model missing at $MODEL_PATH"
-fi
+  sleep 1
+done
 
+# 3) Start API (foreground)
 cd /app
 exec python3 -m uvicorn api:app \
   --host 0.0.0.0 --port "$PORT" \
   --proxy-headers --forwarded-allow-ips="*"
-
-
-
-# echo "[boot] entrypoint running"
-# echo "[boot] PORT=${PORT:-}"
-# echo "[boot] pwd=$(pwd)"
-# ls -lah /app || true
-# python3 -V
-# python3 -c "import fastapi, uvicorn; print('[boot] fastapi', fastapi.__version__, 'uvicorn', uvicorn.__version__)"
-
-# PORT="${PORT:-8080}"
-# cd /app
-# exec python3 -m uvicorn api:app --host 0.0.0.0 --port "$PORT" --proxy-headers --forwarded-allow-ips="*"
