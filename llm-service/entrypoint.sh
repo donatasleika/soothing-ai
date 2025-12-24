@@ -9,10 +9,9 @@ LOCAL_MODEL="/tmp/model.gguf"
 echo "[boot] PORT=$PORT LLAMA_PORT=$LLAMA_PORT MODEL_PATH=$MODEL_PATH"
 ls -lah "$(dirname "$MODEL_PATH")" || true
 
-# 1) Start llama-server (but only after copying model locally)
 echo "[boot] copying model to local disk: $LOCAL_MODEL"
 cp -f "$MODEL_PATH" "$LOCAL_MODEL"
-ls -lah "$LOCAL_MODEL"
+ls -lah "$LOCAL_MODEL" || true
 
 echo "[boot] starting llama-server..."
 /usr/local/bin/llama-server \
@@ -22,29 +21,46 @@ echo "[boot] starting llama-server..."
   --no-webui \
   --no-mmap \
   -c 2048 \
-  > /tmp/llama.log 2>&1 &
+  2>&1 &
 LLAMA_PID=$!
 
-# Stream llama logs to Cloud Run logs
-tail -n +1 -F /tmp/llama.log &
-TAIL_PID=$!
+# fail fast if it dies immediately
+sleep 2
+if ! kill -0 "$LLAMA_PID" 2>/dev/null; then
+  echo "[boot][ERROR] llama-server exited immediately"
+  wait "$LLAMA_PID" || true
+  exit 1
+fi
 
-# 2) Wait until llama responds 200 on "/"
-echo "[boot] waiting for llama-server..."
-for i in $(seq 1 120); do
-  if curl -fsS "http://127.0.0.1:${LLAMA_PORT}/" >/dev/null 2>&1; then
-    echo "[boot] llama-server ready"
+echo "[boot] waiting for llama OpenAI endpoint..."
+READY=0
+LAST_ERR=""
+for ((i=1; i<=180; i++)); do
+  if curl -fsS "http://127.0.0.1:${LLAMA_PORT}/v1/models" >/dev/null 2>&1; then
+    READY=1
+    echo "[boot] llama ready"
     break
+  else
+    LAST_ERR="$(curl -fsS "http://127.0.0.1:${LLAMA_PORT}/v1/models" 2>&1 || true)"
   fi
+
   if ! kill -0 "$LLAMA_PID" 2>/dev/null; then
-    echo "[boot][ERROR] llama-server exited"
-    tail -n 200 /tmp/llama.log || true
+    echo "[boot][ERROR] llama-server died during startup"
+    wait "$LLAMA_PID" || true
     exit 1
   fi
+
   sleep 1
 done
 
-# 3) Start API (foreground)
+if [[ "$READY" -ne 1 ]]; then
+  echo "[boot][ERROR] llama-server not ready after 180s"
+  echo "[boot][ERROR] last curl error: ${LAST_ERR}"
+  kill "$LLAMA_PID" 2>/dev/null || true
+  wait "$LLAMA_PID" 2>/dev/null || true
+  exit 1
+fi
+
 cd /app
 exec python3 -m uvicorn api:app \
   --host 0.0.0.0 --port "$PORT" \
