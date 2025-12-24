@@ -16,7 +16,7 @@ RUN cmake -S . -B build \
       -DLLAMA_CURL=OFF \
       -DLLAMA_BUILD_TESTS=OFF \
       -DLLAMA_BUILD_EXAMPLES=OFF \
-  && cmake --build build --target llama-server -j \
+  && cmake --build build --target llama-server -j 1 \
   && cmake --install build
 
 
