@@ -44,9 +44,9 @@ RUN /usr/local/bin/llama-server --help
 
 # App
 WORKDIR /app
-COPY api.py /app/api.py
-# Copy entrypoint
-COPY entrypoint.sh /app/entrypoint.sh
+COPY llm-service/api.py /app/api.py
+COPY llm-service/entrypoint.sh /app/entrypoint.sh
+
 
 # Fix line endings, permissions, and verify shebang
 RUN sed -i 's/\r$//' /app/entrypoint.sh \
