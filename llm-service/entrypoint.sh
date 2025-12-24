@@ -9,15 +9,18 @@ MODEL_PATH="${MODEL_DIR}/${MODEL_FILE}"
 MODEL_GCS="${MODEL_GCS:-}"
 
 echo "[boot] PORT=$PORT LLAMA_PORT=$LLAMA_PORT"
+echo "[boot] which python=$(which python3)"
+echo "[boot] which gsutil=$(command -v gsutil || echo MISSING)"
+echo "[boot] which llama-server=$(command -v llama-server || echo MISSING)"
 mkdir -p "$MODEL_DIR"
 
-# 1) Start API immediately (satisfies Cloud Run)
+# Start API immediately (must bind PORT fast)
 python3 -m uvicorn api:app \
   --host 0.0.0.0 --port "$PORT" \
   --proxy-headers --forwarded-allow-ips="*" &
 API_PID=$!
 
-# 2) Background: download model + start llama
+# Background worker: download + start llama, never kills API if it fails
 (
   set -euo pipefail
 
@@ -27,27 +30,21 @@ API_PID=$!
   fi
 
   if [[ ! -f "$MODEL_PATH" ]]; then
-    echo "[boot][ERROR] model file not found at $MODEL_PATH"
-    exit 1
+    echo "[boot][ERROR] model missing at $MODEL_PATH"
+    exit 0
   fi
 
   if ! command -v llama-server >/dev/null 2>&1; then
-    echo "[boot][ERROR] llama-server not in PATH"
-    exit 1
+    echo "[boot][ERROR] llama-server missing"
+    exit 0
   fi
 
   echo "[boot] starting llama-server on 127.0.0.1:$LLAMA_PORT"
-  llama-server \
-    -m "$MODEL_PATH" \
-    --host 127.0.0.1 \
-    --port "$LLAMA_PORT" \
-    -c 2048 \
-    --no-webui \
+  llama-server -m "$MODEL_PATH" --host 127.0.0.1 --port "$LLAMA_PORT" -c 2048 --no-webui \
     >/tmp/llama.log 2>&1
 
-) &
+) || true &
 
-# Optional: stream llama logs to Cloud Run logs
 ( sleep 1; echo "--- tail /tmp/llama.log ---"; tail -n +1 -F /tmp/llama.log ) &
 
 wait "$API_PID"
