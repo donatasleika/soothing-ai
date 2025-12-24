@@ -14,19 +14,22 @@ RUN cmake -S . -B build \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLAMA_BUILD_SERVER=ON \
       -DGGML_STATIC=ON \
-      -DGGML_CURL=OFF \
+      -DLLAMA_CURL=OFF \
       -DGGML_OPENMP=OFF \
       -DGGML_METAL=OFF -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_OPENCL=OFF \
   && cmake --build build -j \
   && cmake --install build
+
 
 # ---------- runtime stage ----------
 FROM debian:12
 
 # Python + curl for simple probes; venv to avoid PEP 668 issues
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      bash python3 python3-venv python3-pip ca-certificates curl gnupg \
+      build-essential cmake git curl ca-certificates \
+      libcurl4-openssl-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Install Google Cloud SDK (provides gsutil)
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" \
