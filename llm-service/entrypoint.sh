@@ -9,6 +9,14 @@ MODEL_PATH="${MODEL_DIR}/${MODEL_FILE}"
 echo "[boot] PORT=$PORT  LLAMA_PORT=$LLAMA_PORT"
 echo "[boot] listing $MODEL_DIR"; ls -lah "$MODEL_DIR" || true
 
+MODEL_GCS="${MODEL_GCS:-}"
+if [[ -n "$MODEL_GCS" ]]; then
+  echo "[boot] downloading model from $MODEL_GCS"
+  mkdir -p "$MODEL_DIR"
+  gsutil -m cp "$MODEL_GCS" "$MODEL_PATH"
+fi
+
+
 # Start llama first
 if [[ -f "$MODEL_PATH" ]] && command -v llama-server >/dev/null 2>&1; then
   echo "[boot] starting llama-server -m $MODEL_PATH on 127.0.0.1:$LLAMA_PORT"

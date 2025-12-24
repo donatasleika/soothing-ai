@@ -12,7 +12,7 @@ RUN git clone https://github.com/ggml-org/llama.cpp.git /llama
 # (prevents runtime from needing odd shared libs like libmtmd.so)
 RUN cmake -S . -B build \
       -DCMAKE_BUILD_TYPE=Release \
-      -DLLAMA_SERVER=ON \
+      -DLLAMA_BUILD_SERVER=ON \
       -DGGML_STATIC=ON \
       -DGGML_CURL=OFF \
       -DGGML_OPENMP=OFF \
@@ -30,6 +30,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy the statically linked llama-server from build stage
 COPY --from=build /usr/local/bin/llama-server /usr/local/bin/llama-server
+RUN /usr/local/bin/llama-server --help
+
 
 # App
 WORKDIR /app

@@ -10,7 +10,7 @@ def root():
 
 def _probe_llama():
     port = int(os.environ.get("LLAMA_PORT","8081"))
-    r = requests.get(f"http://127.0.0.1:{port}/", timeout=2)
+    r = requests.get(f"http://127.0.0.1:{port}/v1/models", timeout=2)
     r.raise_for_status()
     return {"ok": True}
 
@@ -34,7 +34,7 @@ def extract(payload: dict = Body(...)):
     port = int(os.environ.get("LLAMA_PORT","8081"))
     try:
         resp = requests.post(
-            f"http://127.0.0.1:{port}/completion",
+            f"http://127.0.0.1:{port}/v1/completions",
             json={"prompt": prompt, "n_predict": 64, "temperature": 0.0, "top_k": 1},
             timeout=120,
         )
