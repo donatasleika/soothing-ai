@@ -13,12 +13,14 @@ RUN git clone https://github.com/ggml-org/llama.cpp.git /llama
 RUN cmake -S . -B build \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLAMA_BUILD_SERVER=ON \
-      -DGGML_STATIC=ON \
       -DLLAMA_CURL=OFF \
+      -DBUILD_SHARED_LIBS=OFF \
       -DGGML_OPENMP=OFF \
       -DGGML_METAL=OFF -DGGML_CUDA=OFF -DGGML_VULKAN=OFF -DGGML_OPENCL=OFF \
-  && cmake --build build -j \
+      -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
+  && cmake --build build --target llama-server -j \
   && cmake --install build
+
 
 
 # ---------- runtime stage ----------
@@ -38,6 +40,10 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
       | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
  && apt-get update && apt-get install -y --no-install-recommends google-cloud-cli \
  && rm -rf /var/lib/apt/lists/*
+
+
+COPY --from=build /usr/local/lib/ /usr/local/lib/
+RUN ldconfig
 
 
 # Copy the statically linked llama-server from build stage
