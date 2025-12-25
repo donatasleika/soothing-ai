@@ -58,3 +58,13 @@ async def proxy_v1(path: str, request: Request):
         status_code=upstream.status_code,
         headers=out_headers,
     )
+
+@app.get("/diag")
+async def diag():
+    async with httpx.AsyncClient(timeout=2.0) as client:
+        r_root = await client.get(f"{LLAMA_BASE}/")
+        return {
+            "llama_base": LLAMA_BASE,
+            "root_status": r_root.status_code,
+            "root_body": r_root.text[:200],
+        }
