@@ -1,40 +1,31 @@
-from fastapi import FastAPI, HTTPException, Body, Request, Response
-from fastapi.responses import PlainTextResponse
-import os, requests
+import os
 import httpx
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import PlainTextResponse
 
 app = FastAPI()
 
 LLAMA_PORT = int(os.environ.get("LLAMA_PORT", "8081"))
 LLAMA_BASE = f"http://127.0.0.1:{LLAMA_PORT}"
 
-
 @app.get("/", response_class=PlainTextResponse)
 def root():
     return "llama-cpu alive"
 
-def _probe_llama():
-    try:
-        r = requests.get(f"{LLAMA_BASE}/v1/models", timeout=2)
-        r.raise_for_status()
-        return {"ok": True}
-    except Exception:
-        r = requests.get(f"{LLAMA_BASE}/", timeout=2)
-        r.raise_for_status()
-        return {"ok": True}
-
-# @app.get("/healthz")
 @app.get("/healthz/")
-def healthz():
+async def healthz():
+    # Ready only when llama-server is serving the OpenAI-compatible endpoint
     try:
-        return _probe_llama()
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            r = await client.get(f"{LLAMA_BASE}/v1/models")
+        if r.status_code != 200:
+            raise RuntimeError(f"status={r.status_code} body={r.text[:200]}")
+        return {"ok": True}
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"llama check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"llama not ready: {e}")
 
-
-# OpenAI-compatible endpoint for text completion
 @app.api_route("/v1/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
-async def proxy_v1(path: str, request:Request):
+async def proxy_v1(path: str, request: Request):
     upstream_url = f"{LLAMA_BASE}/v1/{path}"
 
     body = await request.body()
@@ -46,8 +37,9 @@ async def proxy_v1(path: str, request:Request):
     headers.pop("connection", None)
 
     timeout = httpx.Timeout(connect=10.0, read=600.0, write=600.0, pool=10.0)
+
     async with httpx.AsyncClient(timeout=timeout) as client:
-        r = await client.request(
+        upstream = await client.request(
             method=request.method,
             url=upstream_url,
             params=params,
@@ -55,33 +47,14 @@ async def proxy_v1(path: str, request:Request):
             headers=headers,
         )
 
-    passthrough = {}
-    ct = r.headers.get("content-type")
+    # minimal header passthrough
+    out_headers = {}
+    ct = upstream.headers.get("content-type")
     if ct:
-        passthrough["content-type"] = ct
+        out_headers["content-type"] = ct
 
-    return Response(content=r.content, status_code=r.status_code, headers=passthrough)
-
-@app.post("/extract")
-def extract(payload: dict = Body(...)):
-    text = payload.get("text", "")
-    if not text:
-        raise HTTPException(status_code=422, detail="missing 'text'")
-    
-    prompt = (
-        'Extract only JSON. Return {"sentiment":"positive|neutral|negative","tone":"...","keywords":["..."]}. '
-        f'Text:\\n{text}\\nJSON:'
+    return Response(
+        content=upstream.content,
+        status_code=upstream.status_code,
+        headers=out_headers,
     )
-    # port = int(os.environ.get("LLAMA_PORT","8081"))
-    
-    try:
-        resp = requests.post(
-            f"http://127.0.0.1:{port}/completion",
-            json={"prompt": prompt, "n_predict": 64, "temperature": 0.0, "top_k": 1},
-            timeout=120,
-        )
-        if not resp.ok:
-            raise HTTPException(status_code=502, detail=f"llama error: {resp.text}")
-        return resp.json()
-    except requests.RequestException as e:
-        raise HTTPException(status_code=502, detail=f"llama request failed: {e}")
