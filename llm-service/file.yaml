@@ -1,0 +1,15 @@
+IMG="europe-west1-docker.pkg.dev/fluted-haven-467020-v1/llm-repo/llama-cpu@sha256:3aa5f23f9f52962249636fa044d607a76575ee027569edc8f951d5088a4cc73f"
+
+cat > cloudbuild.inspect.yaml <<YAML
+steps:
+- name: gcr.io/cloud-builders/docker
+  entrypoint: bash
+  args:
+  - -lc
+  - |
+    set -eux
+    docker pull "$IMG"
+    docker run --rm "$IMG" sh -lc 'python -c "import httpx; print(httpx.__version__)" || echo NO_HTTPX'
+YAML
+
+gcloud builds submit --no-source --project fluted-haven-467020-v1 --config cloudbuild.inspect.yaml

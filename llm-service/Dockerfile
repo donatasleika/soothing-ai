@@ -38,7 +38,7 @@ COPY entrypoint.sh /app/entrypoint.sh
 RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod 755 /app/entrypoint.sh
 
 RUN python3 -m venv /opt/venv \
- && /opt/venv/bin/pip install --no-cache-dir fastapi uvicorn requests
+ && /opt/venv/bin/pip install --no-cache-dir fastapi uvicorn requests httpx
 
 ENV PATH="/opt/venv/bin:${PATH}"
 ENV PYTHONPATH=/app
