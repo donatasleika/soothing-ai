@@ -12,6 +12,12 @@ secret_key = secrets.token_hex(16)
 
 print("NiceGUI app initialized")
 
+MONGODB_URI = os.getenv("MONGODB_URI")
+
+if not os.getenv(MONGODB_URI):
+    raise RuntimeError("MONGODB_URI is required. See .env.example.")
+
+
 register_login_ui()
 register_admin_ui()
 register_entries_ui()

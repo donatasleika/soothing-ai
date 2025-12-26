@@ -7,6 +7,10 @@ load_dotenv()
 
 MONGO_CREDS = ["MONGO_CREDS"]
 
+if MONGO_CREDS is None:
+    raise ValueError("MONGO_CREDS environment variable required.")
+
+
 cluster = MongoClient(f"mongodb+srv://{MONGO_CREDS}/?retryWrites=true&w=majority", tls=True, tlsAllowInvalidCertificates=True)
 db = cluster["Cluster0"]
 
