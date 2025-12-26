@@ -18,49 +18,6 @@ import asyncio
 
 chat_bubbles = []
 
-# async def make_draggable_card(message: str):
-
-#     with ui.card().classes('p-4 shadow-md rounded-lg bg-white text-black') \
-#                 .style('position: absolute; top: 100px; left: 100px; cursor: grab; z-index: 999;') as bubble:
-#         ui.label(message)
-
-
-#     # if e.args.get('shiftKey'):
-#     #     return
-
-#     # message = input_box.value.strip()
-#     # if message:
-#     #     # Show message as a draggable card
-#     #     with ui.card().classes('p-4 shadow-md rounded-lg bg-white text-black') \
-#     #                 .style('position: absolute; top: 100px; left: 100px; cursor: grab; z-index: 999;') as bubble:
-#     #         ui.label(message)
-
-#     js = f"""
-#     const el = document.querySelector("#{bubble.id}");
-#     let offsetX = 0, offsetY = 0, isDragging = false;
-
-#     el.addEventListener('mousedown', function(e) {{
-#         isDragging = true;
-#         offsetX = e.clientX - el.offsetLeft;
-#         offsetY = e.clientY - el.offsetTop;
-#         el.style.cursor = 'grabbing';
-#     }});
-
-#     document.addEventListener('mousemove', function(e) {{
-#         if (isDragging) {{
-#             el.style.left = (e.clientX - offsetX) + 'px';
-#             el.style.top = (e.clientY - offsetY) + 'px';
-#         }}
-#     }});
-
-#     document.addEventListener('mouseup', function() {{
-#         isDragging = false;
-#         el.style.cursor = 'grab';
-#     }});
-#     """
-#     await ui.run_javascript(js)
-
-
 
 
 def register_submit_ui():
@@ -136,26 +93,6 @@ def register_submit_ui():
         
         ui.query('body').classes('bg-gradient-to-t from-blue-400 to-blue-100')
 
-        # # Poll the transcript
-        # async def update_label():
-        #     async with httpx.AsyncClient() as client:
-        #         while True:
-        #             try:
-        #                 # response = await client.get('http://localhost:8080/get_transcript')
-        #                 # if response.status_code == 200:
-        #                 #     result = response.json()
-        #                     transcript_output.text = result.get('text', '')
-
-        #                     # Gauti GPT atsakymą
-        #                     g_response = await client.get('http://localhost:8080/get_response')
-        #                     if g_response.status_code == 200:
-        #                         input_box.text = g_response.json().get('response', '')
-
-        #             except Exception as e:
-        #                 print('Error fetching transcript:', e)
-        #             await asyncio.sleep(1)
-
-        # ui.timer(interval=1.0, callback=update_label)
 
         with ui.row().classes('w-full h-screen items-center justify-center'):
             with ui.card().classes('max-w-2xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg').style('border: 1px solid #e2e8f0;') \
