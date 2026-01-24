@@ -1,6 +1,6 @@
 from src.test_ui import register_admin_ui
-from src.entries import register_entries_ui
-from src.patient_entry_url import register_submit_ui
+from src.pages.entries import register_entries_ui
+from src.pages.patient_entry_url import register_submit_ui
 from nicegui import ui
 import secrets
 import src.route_schema

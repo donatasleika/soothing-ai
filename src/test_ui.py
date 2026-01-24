@@ -1,11 +1,11 @@
 from nicegui import ui, app, events, storage
 import secrets
 import uuid
-from . import mongodb_db
+import mongodb_db
 import json
 import os
 from types import SimpleNamespace
-from .route_schema import set_shared_state, get_shared_state
+from route_schema import set_shared_state, get_shared_state
 from urllib.parse import quote
 
 

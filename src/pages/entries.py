@@ -1,6 +1,6 @@
 from nicegui import ui
 from datetime import datetime
-from . import mongodb_db
+import mongodb_db
 
 name = 'Donatas Leika'
 
@@ -217,3 +217,4 @@ def patient_entries(patient_name: str):
         # ui.run(port=8081, title='Soothing AI - Entries', reload=True, favicon='', dark=False)
 
     # ui.run(port=8081, title='Soothing AI - Entries', reload=True, favicon='', dark=False)
+
