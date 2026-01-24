@@ -1,4 +1,4 @@
-# Soothing-AI
+# Soothing-AI - Mirroring Your Inner World
 
 # Purpose
 Minimal prototype demonstrating how medical professionals can track patient states between interventions.
