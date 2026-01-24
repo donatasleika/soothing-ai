@@ -2,8 +2,13 @@ import pandas as pd
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from pymongo import MongoClient
+from dotenv import load_dotenv
 
-cluster = MongoClient("mongodb+srv://donatas:Meileyracia42@cluster0.v4cy82i.mongodb.net/?retryWrites=true&w=majority&ssl=true", tls=True, tlsAllowInvalidCertificates=True)
+load_dotenv()
+
+MONGO_CREDS = ["MONGO_CREDS"]
+
+cluster = MongoClient(f"{MONGO_CREDS}", tls=True, tlsAllowInvalidCertificates=True)
 db = cluster["Cluster0"]
 collection = db["tokens"]
 
