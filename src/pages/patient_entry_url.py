@@ -1,9 +1,9 @@
 import uuid
 from nicegui import ui
 import secrets
-from .route_schema import get_shared_state
+from route_schema import get_shared_state
 from pymongo.mongo_client import MongoClient
-from . import mongodb_db
+import mongodb_db
 from datetime import datetime
 # import test_llm
 

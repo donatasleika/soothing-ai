@@ -3,12 +3,15 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
-MONGO_CREDS = ["MONGO_CREDS"]
+
+MONGO_CREDS = os.getenv("MONGO_CREDS")
 
 cluster = MongoClient(f"{MONGO_CREDS}", tls=True, tlsAllowInvalidCertificates=True)
+print(cluster)
 db = cluster["Cluster0"]
 collection = db["tokens"]
 

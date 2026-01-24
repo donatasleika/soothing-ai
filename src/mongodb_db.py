@@ -1,13 +1,17 @@
 from pymongo.mongo_client import MongoClient
 import ssl
 from datetime import datetime
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
+import os
+
+
+dotenv_values("MONGO_CREDS")
 
 load_dotenv()
 
 print(load_dotenv("MONGO_CREDS"))
 
-MONGO_CREDS = ["MONGO_CREDS"]
+MONGO_CREDS = os.getenv("MONGO_CREDS")
 
 if MONGO_CREDS is None:
     raise ValueError("MONGO_CREDS environment variable required.")

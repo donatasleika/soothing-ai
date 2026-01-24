@@ -1,9 +1,9 @@
-from src.test_ui import register_admin_ui
-from src.pages.entries import register_entries_ui
-from src.pages.patient_entry_url import register_submit_ui
+from test_ui import register_admin_ui
+from pages.entries import register_entries_ui
+from pages.patient_entry_url import register_submit_ui
 from nicegui import ui
 import secrets
-import src.route_schema
+import route_schema
 import os
 
 

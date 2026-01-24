@@ -339,11 +339,6 @@ def register_admin_ui():
 
 
 
-                        
-
-            # with ui.column():
-            #     ui.label('Another section of the UI')
-            #     ui.input(label='Type something', placeholder='Enter text here')
                     
         await populate_patient_cards() 
 
