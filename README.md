@@ -1,9 +1,9 @@
-# Soothing-AI - Mirroring Your Inner World
+# Soothing-AI - Inner World Mirror
 
 # Purpose
 Minimal prototype demonstrating how medical professionals can track patient states between interventions.
 
-# What this demonstrates
+# Features
 - API-style request/response handling
 - Structured prompt orchestration
 - Deterministic LLM output validation
