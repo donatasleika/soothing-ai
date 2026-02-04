@@ -1,20 +1,24 @@
-from src.test_ui import register_admin_ui
-from src.entries import register_entries_ui
-from src.patient_entry_url import register_submit_ui
-from src.login_page import register_login_ui
+from src.app.pages.test_ui import register_admin_ui
+from src.app.pages.entries import register_entries_ui
+from src.app.pages.patient_entry_url import register_submit_ui
+from src.app.pages.login_page import register_login_ui
 from nicegui import ui
 import secrets
-import src.route_schema
+import src.app.pages.route_schema
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 secret_key = secrets.token_hex(16)
 
 
 print("NiceGUI app initialized")
 
-MONGODB_URI = os.getenv("MONGODB_URI")
+MONGODB_URI = os.getenv("MONGO_CREDS")
+print(MONGODB_URI)
 
-if not os.getenv(MONGODB_URI):
+if not MONGODB_URI:
     raise RuntimeError("MONGODB_URI is required. See .env.example.")
 
 

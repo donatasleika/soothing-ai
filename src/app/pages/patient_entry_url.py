@@ -1,9 +1,10 @@
 import uuid
 from nicegui import ui
 import secrets
-from route_schema import get_shared_state
+from .route_schema import get_shared_state
 from pymongo.mongo_client import MongoClient
-import mongodb_db
+from ..database import mongodb_db
+from ..llm import api
 from datetime import datetime
 # import test_llm
 
@@ -148,6 +149,7 @@ def register_submit_ui():
 
                             print(f'pewp: {len(entries)}')
 
+        # The user's entry object creation
                             new_entry_id = len(entries) + 1 if entries else 1
 
                             entry_data = {
@@ -164,6 +166,10 @@ def register_submit_ui():
                             }
 
                             tag_data = {'sentiment': ['sample'], 'tone': ['sample', 'sample'], 'keywords': ['sample', 'sample']}
+
+                            print(entry_data)
+                            print(api.get_completions(entry_data))
+
 
 
                             mongodb_db.insert_one_entry(client_data, entry_data, tag_data)

@@ -5,19 +5,22 @@ from dotenv import load_dotenv, dotenv_values
 import os
 
 
-dotenv_values("MONGO_CREDS")
+ENV_PATH = '/Users/donatas/Desktop/Darbas/Python/projects/soothing.ai/soothing-ai/.env'
 
-load_dotenv()
 
-print(load_dotenv("MONGO_CREDS"))
+load_dotenv(ENV_PATH)
 
 MONGO_CREDS = os.getenv("MONGO_CREDS")
+
+print(MONGO_CREDS)
 
 if MONGO_CREDS is None:
     raise ValueError("MONGO_CREDS environment variable required.")
 
 
 cluster = MongoClient(f"{MONGO_CREDS}", tls=True, tlsAllowInvalidCertificates=True)
+
+cluster.admin.command("ping")
 db = cluster["Cluster0"]
 
 
@@ -177,7 +180,7 @@ def find_read_entries(client_data, patient_name: str) -> list:
         {"$match": {"entries.read": False}},  # boolean True
         {"$replaceRoot": {"newRoot": "$entries"}},
     ]
-    return coll.aggregate(pipeline)
+    return list(coll.aggregate(pipeline))
 
 
 def insert_one_patient(client_data, patient_data):
