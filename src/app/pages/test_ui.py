@@ -109,8 +109,11 @@ def register_admin_ui():
 
                         patient_state_name.patient_name = name_input.value
 
-                        await new_patient(patient_name, total_entries, patient_id)
+                        try:
 
+                            await new_patient(patient_name, total_entries, patient_id)
+                        except Exception as e:
+                            print(e)
                         
                         url_dialog.close()
                         await url_dialog_form(patient_name, private_url, patient_id)
@@ -169,7 +172,6 @@ def register_admin_ui():
                         .classes('orientation-vertical justify-start')
                 
 
-
                 # RIGHT Group
                 with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
 
@@ -182,10 +184,9 @@ def register_admin_ui():
                         .tooltip('Logout') \
                         .props('flat') \
 
-            # Patient Cards Section
+        # Patient Cards Section
         with ui.row().classes('w-full justify-between items-start').style('padding-top: 2px;'):
             # with ui.card().classes('bg-gray-100 p-6 w-full'):
-
 
                 async def delete_patient(patient_card, new_patient_id):
                     patient_card.delete()
@@ -197,10 +198,13 @@ def register_admin_ui():
 
                 async def new_patient(patient_name: str, total_entries: int, patient_id: str):
                     patient_card = None
+                    positive_sentiment_count = 0
+                    neutral_sentiment_count = 0
+                    negative_sentiment_count = 0
 
                     with patient_container:
 
-
+                # PATIENT CARD
                         with ui.element() as patient_card:
                             # Patient Card
                             with ui.card().classes('rounded-lg w-full').style('width: 367px;'):
@@ -227,8 +231,6 @@ def register_admin_ui():
                                             else:
                                                 print('No documents with read entries')
                                              
-                                             
-                                            count = 42  # your variable
 
                                             if docs and len(docs) > 0:
                                                 # Display the count in a small red circle
@@ -242,7 +244,7 @@ def register_admin_ui():
                                                     ui.label(str(docs)).style('color: white; font-size: 12px;')
                                                 # ui.element().style('position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background-color: red; border-radius: 50%;')
                                             
-                                        # Burger Menu 
+                                # Burger Menu 
                                         # with ui.element('q-fab').props('icon=menu').classes('text-h7').style('color: black;'):
                                         with ui.dropdown_button().props('flat color=black').classes('text-h7 justify-end').style('color: black;'):
                                             with ui.column().classes('gap-0'):
@@ -252,6 +254,23 @@ def register_admin_ui():
                                         
  
                                 ui.separator()
+
+                                try:
+                                    entries = mongodb_db.check_llm_tags(patient_name
+                                    )
+
+                                except Exception as e:
+                                    print(f'\n Check Num Entries: {e} \n')
+                                
+                                # print(f'ent yep: {entries}')
+                                for ent in entries:
+                                    if ent['sentiment'] == 'positive':
+                                        positive_sentiment_count += 1
+                                    elif ent['sentiment'] == 'neutral':
+                                        neutral_sentiment_count += 1
+                                    elif ent['sentiment'] == 'negative':
+                                        negative_sentiment_count += 1
+
 
                                 # Sentiment Thermometer
                                 with ui.card().style('border-color: black; background-color: transparent; border-width: 0px; border-style: solid; padding: 0;').classes('rounded-lg w-full'):
@@ -284,9 +303,9 @@ def register_admin_ui():
                                             'axisLabel': {'show': False},
                                             },
                                         'series': [ 
-                                            {'type': 'bar', 'stack': 'total', 'data': [30], 'name': 'Positive', 'barWidth': '100%', 'itemStyle': {'borderRadius': [10, 0, 0, 10]}},
-                                            {'type': 'bar', 'stack': 'total', 'data': [50], 'name': 'Neutral', 'barWidth': '100%', 'itemStyle': {'borderRadius': 0}},
-                                            {'type': 'bar', 'stack': 'total', 'data': [20], 'name': 'Negative', 'barWidth': 20, 'itemStyle': {'borderRadius': [0, 10, 10, 0]}}
+                                            {'type': 'bar', 'stack': 'total', 'data': [positive_sentiment_count], 'name': 'Positive', 'barWidth': '100%', 'itemStyle': {'borderRadius': [10, 0, 0, 10]}},
+                                            {'type': 'bar', 'stack': 'total', 'data': [neutral_sentiment_count], 'name': 'Neutral', 'barWidth': '100%', 'itemStyle': {'borderRadius': 0}},
+                                            {'type': 'bar', 'stack': 'total', 'data': [negative_sentiment_count], 'name': 'Negative', 'barWidth': 20, 'itemStyle': {'borderRadius': [0, 10, 10, 0]}}
                                         ],
                                         'barCategoryGap': '0%' 
                                     }).style('height: 18px; width: 100%; border-radius: 1px;')
@@ -334,13 +353,15 @@ def register_admin_ui():
                     patient_data={'patient_name': patient_name, 'patient_id': patient_id}
                 )
 
-                await new_patient(patient_name, total_entries, patient_id)
-                
+                try:
+                    await new_patient(patient_name, total_entries, patient_id)
+                except Exception as e:
+                    print(f'Exception at new_patient: {e}')
 
-
-
-                    
-        await populate_patient_cards() 
+        try:
+            await populate_patient_cards() 
+        except Exception as e:
+            print(f'Exception at populate_patient_cards: {e}')
 
 secret_key = secrets.token_hex(16)
 

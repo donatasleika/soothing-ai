@@ -37,5 +37,7 @@ ui.run(
     port=8080, 
     title='Soothing AI', 
     favicon='', 
-    dark=False)
+    dark=False,
+    show=False,
+    reload=False)
 

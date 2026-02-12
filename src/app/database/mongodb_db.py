@@ -63,7 +63,7 @@ def check_num_entries(client_data: dict, patient_data: dict) -> None:
     collection = db[collection_name]
     
     doc = collection.find_one({"_id": patient_data["patient_id"]})
-    print(patient_data["patient_id"])
+    print(f'@ check_num_entries:   {patient_data["patient_id"]}')
 
     if not doc:
         print("No patient found with the given ID.")
@@ -149,6 +149,22 @@ def find_all_patients(client_data: dict):
     #     # projects["entries": []] = result
     #     print(result)
     
+def check_llm_tags(patient_name: str):
+    docs = collection.find(
+        {"patient_name": patient_name},
+        {"entries.tags": 1, "_id": 0})
+
+    tags = []
+
+    for doc in docs:
+        for entry in doc.get("entries", []):
+            if "tags" in entry:
+                tags.append(entry["tags"])
+
+    return tags
+
+
+
 def read_receipts(patient_data, entry_data):
         collection_name = f"{patient_data['client_name']}_{patient_data['client_id']}_Patients"
         collection = db[collection_name]
@@ -196,10 +212,6 @@ def insert_one_patient(client_data, patient_data):
     print("Data has been uploaded")
 
 
-# Need a counter for total and a +1 entry counter
-    
-
-
 def insert_one_entry(client_data, entry_data, tag_data):
     collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
     
@@ -212,6 +224,18 @@ def insert_one_entry(client_data, entry_data, tag_data):
         upsert=True
     )
     print("Entry has been uploaded")
+
+def update_llm_tags(client_data, entry_data, tag_data):
+    collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
+
+    full_entry = {**entry_data, "tags":tag_data}
+
+    collection.update_one(
+        {"patient_name": entry_data["patient_name"]},
+        {"$push": {
+            "entries": full_entry}},
+        upsert=True
+    )
 
 
 def insert_many(data):
@@ -227,14 +251,6 @@ def delete_patient(patient_id: str):
     print(f"Patient with ID {patient_id} has been deleted.")
 
 
-# find_id(id)
-
-
-# insert_client(client_data["client_name"], client_data["client_id"])
-
-# insert_one_patient(client_data, patient_data)
-
-# insert_one_entry(client_data, entry_data)
 
 if __name__ == "__main__":
     client_data = {

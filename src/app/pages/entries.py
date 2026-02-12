@@ -110,7 +110,6 @@ def render_entry_card(container, entry, index, patient_name):
 
 
         # Visualize the individual entries
-
         with container:
             with ui.card().classes('w-72 mb-4 p-4'):
                 with ui.row().classes('w-full justify-start items-center'):
@@ -119,7 +118,7 @@ def render_entry_card(container, entry, index, patient_name):
                             'position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; '
                             'background-color: red; border-radius: 50%;'
                         )
-                    print(f'Entry: {entry}')
+                    # print(f'Entry: {entry}')
                     ui.label(entry.get("time_of_entry", "Unknown"))
                     ui.space()
                     # ui.label(entry.get("patient_name", "N/A")).classes('text-sm').style('margin-right: 10px;')
@@ -216,7 +215,7 @@ def register_entries_ui():
                         selected_patient['name'] = patient_name
                         patient_docs = mongodb_db.find_entries(patient_name)
                         entries_container.clear()
-                        print(f'Entry 1: {patient_docs}')
+                        # print(f'Entry 1: {patient_docs}')
 
                         for doc in patient_docs:
                             print(f'Loaded doc: {doc}')

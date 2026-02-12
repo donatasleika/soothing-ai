@@ -116,11 +116,11 @@ def register_submit_ui():
                         if e.args['key'] == 'Enter' and not e.args.get('shiftKey', False):
                             message_text = input_box.value
                             ui.notify(f"Submitted")
-                            print("Captured input:", input_box.value)
+                            print("Captured input:", p_name, input_box.value)
                             input_box.value = ''
 
 
-
+                            # Local User Time (doesn't work yet)
                             local_time = await ui.run_javascript('''
                                 (() => {
                                     const d = new Date();
@@ -144,8 +144,6 @@ def register_submit_ui():
                             # print(tags)
 
                             entries = (mongodb_db.find_entries(p_name)[0]["entries"])
-                            # for x in entries:
-                            #     print(f'Entry: {x[0]}')
 
                             print(f'pewp: {len(entries)}')
 
@@ -165,14 +163,44 @@ def register_submit_ui():
                                 'read': False,
                             }
 
-                            tag_data = {'sentiment': ['sample'], 'tone': ['sample', 'sample'], 'keywords': ['sample', 'sample']}
 
-                            print(entry_data)
-                            print(api.get_completions(entry_data))
+                            # print(entry_data)
+
+                            
+
+                            async def push_entry_to_db(entry_data):
+                                tag_data = {'sentiment': ['sample'], 'tone': ['sample', 'sample'], 'keywords': ['sample', 'sample']}
+                                sentiments = ['positive', 'neutral', 'negative']
+
+                                # Insert sample data as a fallback
+                                mongodb_db.insert_one_entry(client_data, entry_data, tag_data)
+
+                                # Fetch LLM tagging
+                                result = asyncio.create_task(api.get_completions(entry_data))
+
+                                # Checking LLM outputted tags
+                                for tag_object in result:
+                                    key, value = tag_object
+
+                                    # Sense-checking keys (sentiment, tone, keywords) and values
+                                    if isinstance(key, str):
+                                        if key in tag_data:
+                                            # Sense-checking values 
+                                            if isinstance(value, list):
+                                                for x in value:
+                                                    llm_sentiment = [y for y in sentiments if x in y]
+                                                    tag_data[key] = llm_sentiment
+                                            elif isinstance(value, str):
+                                                    tag_data[key] = value
+                                        else:
+                                            print('Value is: ' + key)
+                                    else:
+                                        print('Key type: ' + type(key))
+
+                                # Update entry with LLM tags
+                                mongodb_db.update_llm_tags(client_data, entry_data, tag_data)
 
 
-
-                            mongodb_db.insert_one_entry(client_data, entry_data, tag_data)
 
 
                             # total_entries = mongodb_db.check_num_entries(client_data, patient_data)
