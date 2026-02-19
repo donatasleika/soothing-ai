@@ -9,7 +9,7 @@ Minimal prototype demonstrating how medical professionals can track patient stat
 - Deterministic LLM output validation
 - Safety-first architecture
 - Human-in-the-loop control points
-- Encrypted patient data
+- End-to-end encryption (E2EE)
 
 # Process Loop
 User Input → Validation → Model Inference → Structured Output → Audit / Logging
