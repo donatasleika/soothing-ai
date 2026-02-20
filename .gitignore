@@ -1,4 +1,5 @@
 venv/
+word_cloud/
 llm/
 llama.cpp/
 src/__pycache__/
@@ -10,4 +11,3 @@ __pycache__/
 schema.gbnf
 convert_llama_weights_to_hf.py
 test_llm.py
-word_cloud/
