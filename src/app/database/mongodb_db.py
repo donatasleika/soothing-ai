@@ -56,199 +56,209 @@ entry_data = {
 
 collection = db[f"{client_data['client_name']}_{client_data['client_id']}_Patients"]
 
-
-def check_num_entries(client_data: dict, patient_data: dict) -> None:
-    total_entries = []
-    collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
-    collection = db[collection_name]
-    
-    doc = collection.find_one({"_id": patient_data["patient_id"]})
-    print(f'@ check_num_entries:   {patient_data["patient_id"]}')
-
-    if not doc:
-        print("No patient found with the given ID.")
-        return
-    
-    num_entries = len(doc.get("entries", []))
-
-    if num_entries > 0:
-        total_entries.append(num_entries)
-        print(total_entries)
-        print(f"Number of entries for patient {patient_data['patient_name']}: {num_entries}")
-
-        return total_entries
-        
-    else:
-        print("No entries found for this patient.")
-
-
-
-def check_url_tokens(new_url_token: str, client_data: dict) -> bool:
-    return collection.find_one({
-        "private_url_token": new_url_token,
-        "client_id": client_data["client_id"]
-    }) is not None 
-
-
-def insert_client(client_name: str, client_id: str) -> None:
-    collection_name = f"{client_name}_{client_id}_Patients"
-    if collection_name not in db.list_collection_names():
-        db.create_collection(collection_name)
-        return db[collection_name]
-    
-
 id = 1234
 
 # collection = insert_client(client_data["client_name"], client_data["client_id"])
 
-def find_all_patient_ids():
-    global projects
-    results = collection.find({})
-    for result in results:
-        patient_id = result.get("_id")
-        if patient_id:
-            projects[patient_id] = result
-    return projects
 
-def find_clients(name: str):
-    pass
+class Create:
+    def __init__(self) -> None:
+        pass
 
-def find_patient(id: str) -> str:
-    global projects
-    result = collection.find_one({
-        "_id": id
-    })
-    # for result in results:
-    if result:
-        projects[id] = result
-    else:
-        projects[id] = None
-    print(result)
-    return result
+    def insert_client(self, client_name: str, client_id: str) -> None:
+        collection_name = f"{client_name}_{client_id}_Patients"
+        if collection_name not in db.list_collection_names():
+            db.create_collection(collection_name)
+            return db[collection_name]
 
-def find_entries(patient_name: str):
-    results = collection.find({
-        "patient_name": patient_name
-    })
-    return list(results)
+class Read:
+    def __init__(self) -> None:
+        pass
 
-def find_all_patients(client_data: dict):
-    collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
-    collection = db[collection_name]
-    results = collection.find({})
-    if results is None:
-        print("No patients found for this client.")
-        return []
-    
-    # Assuming results is a cursor, we can convert it to a list
-    results = list(results)
-    print(results)
-    return results
+    def check_url_tokens(self, new_url_token: str, client_data: dict) -> bool:
+        return collection.find_one({
+            "private_url_token": new_url_token,
+            "client_id": client_data["client_id"]
+        }) is not None 
 
-    # for result in results:
-    #     # projects["entries": []] = result
-    #     print(result)
-    
-def check_llm_tags(patient_name: str):
-    docs = collection.find(
-        {"patient_name": patient_name},
-        {"entries.tags": 1, "_id": 0})
-
-    tags = []
-
-    for doc in docs:
-        for entry in doc.get("entries", []):
-            if "tags" in entry:
-                tags.append(entry["tags"])
-
-    return tags
-
-
-
-def read_receipts(patient_data, entry_data):
-        collection_name = f"{patient_data['client_name']}_{patient_data['client_id']}_Patients"
+    def check_num_entries(self, client_data: dict, patient_data: dict) -> None:
+        total_entries = []
+        collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
         collection = db[collection_name]
+        
+        doc = collection.find_one({"_id": patient_data["patient_id"]})
+        print(f'@ check_num_entries:   {patient_data["patient_id"]}')
 
-        res = collection.update_one(
-            {
-                "patient_name": entry_data["patient_name"],
-                "entries.entry_id": entry_data["entry_id"],
-            },
-            {
-                "$set": {
-                    "entries.$.read": True,
-                    "entries.$.read_at": datetime.utcnow(),
-                }
-            },
-            upsert=False,
+        if not doc:
+            print("No patient found with the given ID.")
+            return
+        
+        num_entries = len(doc.get("entries", []))
+
+        if num_entries > 0:
+            total_entries.append(num_entries)
+            print(total_entries)
+            print(f"Number of entries for patient {patient_data['patient_name']}: {num_entries}")
+
+            return total_entries
+            
+        else:
+            print("No entries found for this patient.")
+
+    def find_clients(self, name: str):
+        pass
+
+    def find_all_patient_ids(self):
+        global projects
+        results = collection.find({})
+        for result in results:
+            patient_id = result.get("_id")
+            if patient_id:
+                projects[patient_id] = result
+        return projects
+
+    def find_patient(self, id: str) -> str:
+        global projects
+        result = collection.find_one({
+            "_id": id
+        })
+        # for result in results:
+        if result:
+            projects[id] = result
+        else:
+            projects[id] = None
+        print(result)
+        return result
+
+    def find_entries(self, patient_name: str):
+        results = collection.find({
+            "patient_name": patient_name
+        })
+        return list(results)
+
+    def find_all_patients(self, client_data: dict):
+        collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
+        collection = db[collection_name]
+        results = collection.find({})
+        if results is None:
+            print("No patients found for this client.")
+            return []
+        
+        # Assuming results is a cursor, we can convert it to a list
+        results = list(results)
+        print(results)
+        return results
+
+        # for result in results:
+        #     # projects["entries": []] = result
+        #     print(result)
+    
+    def check_llm_tags(self, patient_name: str):
+        docs = collection.find(
+            {"patient_name": patient_name},
+            {"entries.tags": 1, "_id": 0})
+
+        tags = []
+
+        for doc in docs:
+            for entry in doc.get("entries", []):
+                if "tags" in entry:
+                    tags.append(entry["tags"])
+
+        return tags
+
+
+    def collection_name_for(self, cd) -> str:
+        return f"{cd['client_name']}_{cd['client_id']}_Patients"  # preserves spaces in client_name
+
+    def find_read_entries(self, client_data, patient_name: str) -> list:
+        coll = db[Read.collection_name_for(self, client_data)]
+        pipeline = [
+            {"$match": {"patient_name": patient_name}},
+            {"$unwind": "$entries"},
+            {"$match": {"entries.read": False}},  # boolean True
+            {"$replaceRoot": {"newRoot": "$entries"}},
+        ]
+        return list(coll.aggregate(pipeline))
+
+class Update:
+    def __init__(self) -> None:
+        pass
+
+    def insert_one_patient(self, client_data, patient_data):
+        collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
+        collection = db[collection_name]
+        collection.insert_one({
+            "_id": patient_data["patient_id"],
+            "client_id": patient_data["client_id"],
+            "patient_name": patient_data["patient_name"],
+            "private_url_token": patient_data["private_url_token"],
+            "entries": []
+        })
+        print("Data has been uploaded")
+
+
+    def insert_one_entry(self, client_data, entry_data, tag_data):
+        collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
+        
+        full_entry = {**entry_data, "tags":tag_data}
+        
+        collection.update_one(
+            {"patient_name": entry_data["patient_name"]},
+            {"$push": {
+                "entries": full_entry}},
+            upsert=True
         )
-        # Optional: return a boolean for the caller
-        return res.matched_count == 1 and res.modified_count >= 1
+        print("Entry has been uploaded")
 
-def collection_name_for(cd) -> str:
-    return f"{cd['client_name']}_{cd['client_id']}_Patients"  # preserves spaces in client_name
+    def update_read_receipts(self, patient_data, entry_data):
+            collection_name = f"{patient_data['client_name']}_{patient_data['client_id']}_Patients"
+            collection = db[collection_name]
 
-def find_read_entries(client_data, patient_name: str) -> list:
-    coll = db[collection_name_for(client_data)]
-    pipeline = [
-        {"$match": {"patient_name": patient_name}},
-        {"$unwind": "$entries"},
-        {"$match": {"entries.read": False}},  # boolean True
-        {"$replaceRoot": {"newRoot": "$entries"}},
-    ]
-    return list(coll.aggregate(pipeline))
-
-
-def insert_one_patient(client_data, patient_data):
-    collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
-    collection = db[collection_name]
-    collection.insert_one({
-        "_id": patient_data["patient_id"],
-        "client_id": patient_data["client_id"],
-        "patient_name": patient_data["patient_name"],
-        "private_url_token": patient_data["private_url_token"],
-        "entries": []
-    })
-    print("Data has been uploaded")
+            res = collection.update_one(
+                {
+                    "patient_name": entry_data["patient_name"],
+                    "entries.entry_id": entry_data["entry_id"],
+                },
+                {
+                    "$set": {
+                        "entries.$.read": True,
+                        "entries.$.read_at": datetime.utcnow(),
+                    }
+                },
+                upsert=False,
+            )
+            # Optional: return a boolean for the caller
+            return res.matched_count == 1 and res.modified_count >= 1
 
 
-def insert_one_entry(client_data, entry_data, tag_data):
-    collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
-    
-    full_entry = {**entry_data, "tags":tag_data}
-    
-    collection.update_one(
-        {"patient_name": entry_data["patient_name"]},
-        {"$push": {
-            "entries": full_entry}},
-        upsert=True
-    )
-    print("Entry has been uploaded")
+    def update_llm_tags(self, client_data, entry_data, tag_data):
+        collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
 
-def update_llm_tags(client_data, entry_data, tag_data):
-    collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
+        full_entry = {**entry_data, "tags":tag_data}
 
-    full_entry = {**entry_data, "tags":tag_data}
-
-    collection.update_one(
-        {"patient_name": entry_data["patient_name"]},
-        {"$push": {
-            "entries": full_entry}},
-        upsert=True
-    )
+        collection.update_one(
+            {"patient_name": entry_data["patient_name"]},
+            {"$push": {
+                "entries": full_entry}},
+            upsert=True
+        )
 
 
-def insert_many(data):
-    collection.insert_many([
-        {
+    def insert_many(self, data):
+        collection.insert_many([
+            {
 
-        }
-    ])
+            }
+        ])
 
+class Delete:
+    def __init__(self) -> None:
+        pass
 
-def delete_patient(patient_id: str):
-    collection.delete_one({"_id": patient_id})
-    print(f"Patient with ID {patient_id} has been deleted.")
+    def delete_patient(self, patient_id: str):
+        collection.delete_one({"_id": patient_id})
+        print(f"Patient with ID {patient_id} has been deleted.")
 
 
 
@@ -275,4 +285,4 @@ if __name__ == "__main__":
 
     # check_num_entries(client_data, patient_data)
     # find_entries(patient_data["patient_name"])
-    find_all_patients(client_data)
+    Read().find_all_patients(client_data)

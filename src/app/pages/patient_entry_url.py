@@ -3,7 +3,7 @@ from nicegui import ui
 import secrets
 from .route_schema import get_shared_state
 from pymongo.mongo_client import MongoClient
-from ..database import mongodb_db
+from ..database.mongodb_db import Read, Update
 from ..llm import api
 from datetime import datetime
 # import test_llm
@@ -131,8 +131,7 @@ def register_submit_ui():
                             ''')
 
 
-                            client_name = mongodb_db.client_data['client_name']
-
+                            client_name = 'Joe Hudson'
                             client_data = {
                                 'client_name': client_name,
                                 'client_id': 1234, # Need to edit this. It's not important to have the client ID here (maybe)
@@ -143,7 +142,7 @@ def register_submit_ui():
                             # tags = test_llm.extract_content(message_text)
                             # print(tags)
 
-                            entries = (mongodb_db.find_entries(p_name)[0]["entries"])
+                            entries = (Read().find_entries(p_name)[0]["entries"])
 
                             print(f'pewp: {len(entries)}')
 
@@ -164,16 +163,12 @@ def register_submit_ui():
                             }
 
 
-                            # print(entry_data)
-
-                            
-
                             async def push_entry_to_db(entry_data):
                                 tag_data = {'sentiment': ['sample'], 'tone': ['sample', 'sample'], 'keywords': ['sample', 'sample']}
                                 sentiments = ['positive', 'neutral', 'negative']
 
                                 # Insert sample data as a fallback
-                                mongodb_db.insert_one_entry(client_data, entry_data, tag_data)
+                                Update().insert_one_entry(client_data, entry_data, tag_data)
 
                                 # Fetch LLM tagging
                                 result = asyncio.create_task(api.get_completions(entry_data))
@@ -198,12 +193,11 @@ def register_submit_ui():
                                         print('Key type: ' + type(key))
 
                                 # Update entry with LLM tags
-                                mongodb_db.update_llm_tags(client_data, entry_data, tag_data)
+                                Update().update_llm_tags(client_data, entry_data, tag_data)
 
 
 
-
-                            # total_entries = mongodb_db.check_num_entries(client_data, patient_data)
+                            asyncio.create_task(push_entry_to_db(entry_data))
 
                             # entry_position = len(total_entries) + 1 if total_entries else 1
 

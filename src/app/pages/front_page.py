@@ -1,7 +1,7 @@
 from nicegui import ui, app, events, storage
 import secrets
 import uuid
-from ..database import mongodb_db
+from ..database.mongodb_db import Read, Update, Delete
 import json
 import os
 from types import SimpleNamespace
@@ -30,7 +30,7 @@ def get_base_url():
 
 
 def new_patient_id() -> str:
-    current_patients = mongodb_db.find_all_patients(client_data=client_data)
+    current_patients = Read().find_all_patients(client_data=client_data)
     used = set()
     for p in current_patients:
         v = p.get('_id')
@@ -51,7 +51,7 @@ async def create_private_url(patient_name: str, patient_id: str) -> str:
     # token generator
     while True:
         token = str(uuid.uuid4())
-        if not mongodb_db.check_url_tokens(token, client_data):
+        if not Read().check_url_tokens(token, client_data):
             set_shared_state(normalized, patient_name, token, patient_id)
             break
 
@@ -70,7 +70,7 @@ def register_admin_ui():
 
         new_patient_dialog = ui.dialog()
         url_dialog = ui.dialog()
-        total_entries = mongodb_db.check_num_entries(client_data={'client_name': client_name, 'client_id': '1234'}, patient_data={'patient_name': patient_name, 'patient_id': '1'})
+        total_entries = Read().check_num_entries(client_data={'client_name': client_name, 'client_id': '1234'}, patient_data={'patient_name': patient_name, 'patient_id': '1'})
 
         # ui.label({client_data['client_name'][0]}).classes('text-h4 font-bold').style('margin-bottom: 20px;')
         
@@ -96,7 +96,7 @@ def register_admin_ui():
                         private_url = await create_private_url(patient_name, patient_id)
 
 
-                        mongodb_db.insert_one_patient(
+                        Update().insert_one_patient(
                             client_data=client_data,
                             patient_data={
                                 'patient_name': patient_name,
@@ -132,7 +132,6 @@ def register_admin_ui():
                                 name_input = ui.input(label='Patient Name')
 
 
-                                    
                                 with ui.row():
                                     ui.radio(options=['Default', 'CBT Programme', 'Custom Programme']) \
                                         .classes('w-full text-xs rounded-lg') \
@@ -190,7 +189,7 @@ def register_admin_ui():
 
                 async def delete_patient(patient_card, new_patient_id):
                     patient_card.delete()
-                    mongodb_db.delete_patient(new_patient_id)
+                    Delete().delete_patient(new_patient_id)
                     
 
                 patient_container = ui.row()
@@ -208,13 +207,13 @@ def register_admin_ui():
                         with ui.element() as patient_card:
                             # Patient Card
                             with ui.card().classes('rounded-lg w-full').style('width: 367px;'):
-                                with ui.row().classes('items-center gap-2').style('width: 100%;'):
+                                with ui.row().classes('w-full items-center justify-between flex-nowrap').style('width: 100%;'):
 
-                                    with ui.row().classes('justify-start gap-2'):
+                                    with ui.row().classes('items-center gap-2 min-w-0 flex-nowrap flex-grow'):
                                         # Patient Name
-                                        ui.label(f'{patient_name}').classes('text-h6').style('margin-right: 1px;')
+                                        ui.label(f'{patient_name}').classes('text-h6 truncate min-w-0').style('margin-right: 1px;')
                                     
-                                    with ui.row().classes('justify-end gap-2'):
+                                    
                                         ui.label('|').classes('text-h5')
 
                                         normalized = client_name.replace(' ', '-').lower()
@@ -225,9 +224,10 @@ def register_admin_ui():
                                                 ui.link(f'{total_entries} Entries', target=f"/{normalized}/entries/{quote(patient_name)}").classes('text-xs text-blue-500 underline').style('line-height: 30px; text-align: center; width: 100%;')
                                             
 
-                                            docs = mongodb_db.find_read_entries(client_data, patient_name)
+                                            docs = Read().find_read_entries(client_data, patient_name)
                                             if docs:
-                                                print(f'yep:  {len(docs)}')
+                                                pass
+                                                # print(f'yep:  {len(docs)}')
                                             else:
                                                 print('No documents with read entries')
                                              
@@ -245,8 +245,8 @@ def register_admin_ui():
                                                 # ui.element().style('position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background-color: red; border-radius: 50%;')
                                             
                                 # Burger Menu 
-                                        # with ui.element('q-fab').props('icon=menu').classes('text-h7').style('color: black;'):
-                                        with ui.dropdown_button().props('flat color=black').classes('text-h7 justify-end').style('color: black;'):
+                                    with ui.element().classes('ml-auto'):
+                                        with ui.dropdown_button().props('flat color=black').classes('text-h7').style('color: black;'):
                                             with ui.column().classes('gap-0'):
                                                 ui.button('Edit Programme').on_click(lambda: ui.notify('Edit Programme clicked!')).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px;').classes('text-xs w-full')
                                                 ui.button('Delete Patient').on_click(lambda c=patient_card, pid=patient_id: delete_patient(c, pid)).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px; justify-content: flex-start; text-align: left;').classes('text-[9px] w-full q-pa-none')
@@ -256,7 +256,7 @@ def register_admin_ui():
                                 ui.separator()
 
                                 try:
-                                    entries = mongodb_db.check_llm_tags(patient_name
+                                    entries = Read().check_llm_tags(patient_name
                                     )
 
                                 except Exception as e:
@@ -327,7 +327,7 @@ def register_admin_ui():
                                             with ui.card().classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 0; box-shadow: none; display: flex; align-items: center;'):
                                                         ui.label(text).classes('text-xs').style('line-height: 30px; text-align: center; white-space: nowrap; padding-right: 5px; padding-left: 5px;')
                                         
-                                # Interaction buttons
+                        # Interaction buttons
                                 with ui.row().classes('w-full gap-2').style('padding-top: 5px; padding-bottom: 5px;'):
                                     
                                     # Write-Up Button
@@ -337,18 +337,19 @@ def register_admin_ui():
 
                                     # Show Trends Button
                                     ui.button('Show Trends') \
+                                        .on_click(f"/{normalized}/trends/{quote(patient_name)}") \
                                         .classes('text-white text-xs rounded-md hover:bg-gray-300') \
                                         .style('flex: 1; height: 32px;')
 
 
         async def populate_patient_cards():
-            current_patients = mongodb_db.find_all_patients(client_data=client_data)
+            current_patients = Read().find_all_patients(client_data=client_data)
 
             for patient in current_patients:
                 patient_name = patient['patient_name']
                 patient_id = patient.get('patient_id', str(patient['_id']))  # fallback if needed
 
-                total_entries = mongodb_db.check_num_entries(
+                total_entries = Read().check_num_entries(
                     client_data=client_data,
                     patient_data={'patient_name': patient_name, 'patient_id': patient_id}
                 )

@@ -1,5 +1,5 @@
-from src.app.pages.test_ui import register_admin_ui
-from src.app.pages.entries import register_entries_ui
+from src.app.pages.front_page import register_admin_ui
+from src.app.pages.entries_page import register_entries_ui
 from src.app.pages.patient_entry_url import register_submit_ui
 from src.app.pages.login_page import register_login_ui
 from nicegui import ui

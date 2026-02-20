@@ -1,6 +1,6 @@
 from nicegui import ui
 from datetime import datetime
-from ..database import mongodb_db
+from ..database.mongodb_db import Update, Read
 import plotly.graph_objects as go
 
 
@@ -74,11 +74,10 @@ def normalize_entry(entry):
 
 def mark_entry_read(patient_name: str, entry_id: int) -> bool:
     """Delegate to mongodb_db.read_receipts using only patient_name, client_data, entry_id."""
-    return mongodb_db.read_receipts(
+    return Update().update_read_receipts(
         client_data,
         {"patient_name": patient_name, "entry_id": entry_id},
     )
-
 
 def render_entry_card(container, entry, index, patient_name):
     with container:
@@ -126,24 +125,7 @@ def render_entry_card(container, entry, index, patient_name):
                 ui.label(entry.get("description", "No description")).classes('text-body-1')
 
                 
-                # more_text = ui.label(
-                #     f'Tags: {", ".join(entry.get("tags", [{}]))}'
-                # ).props('style="margin-top: 8px"').classes('text-sm')
-                # more_text.set_visibility(False)
                 ui.label()
-
-                # more_text = entry.get("tags") or {}
-                # parts = []
-
-                # ui.label(more_text['sentiment']).style('width: 100%; margin: 0; border: none; box-shadow: none; padding-top: 5px;').classes('rounded-lg gap-0')
-
-                # if more_text.get("sentiment"):
-                #     parts.append(f"Sentiment: {ui.label(more_text['sentiment']).style('width: 100%; margin: 0; border: none; box-shadow: none; padding-top: 5px;').classes('rounded-lg gap-0')}")
-                # if more_text.get("tone"):
-                #     parts.append("Tone: " + ", ".join(more_text["tone"]))
-                # if more_text.get("keywords"):
-                #     parts.append("Keywords: " + ", ".join(more_text["keywords"]))
-                # ui.label(" | ".join(parts) if parts else "No Tags") \
 
                 taggers = ui.card().style('width: 100%; margin: 1; border: none; box-shadow: none; padding-top: 5px;').classes('rounded-lg gap-0')
 
@@ -172,9 +154,6 @@ def render_entry_card(container, entry, index, patient_name):
                                 ui.label(word).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
 
 
-                    # more_text = ui.label(str(entry.get("tags") if entry else "No Tags")) \
-                    #     .props('style="margin-top: 8px"').classes('text-sm')
-                    # more_text.set_visibility(True)
                     taggers.set_visibility(True)
 
                 with ui.row().classes('w-full justify-between items-center mt-4'):
@@ -206,14 +185,14 @@ def register_entries_ui():
                 with ui.row().classes('justify-center'):
                     # ui.label('Patients').classes('text-lg font-bold mb-2')
                     ui.label('')
-                patients = mongodb_db.find_all_patients(client_data)
+                patients = Read().find_all_patients(client_data)
 
                 for patient in patients:
                     patient_name = patient['patient_name']
 
                     def load_entries(patient_name=patient_name):
                         selected_patient['name'] = patient_name
-                        patient_docs = mongodb_db.find_entries(patient_name)
+                        patient_docs = Read().find_entries(patient_name)
                         entries_container.clear()
                         # print(f'Entry 1: {patient_docs}')
 
@@ -258,9 +237,8 @@ def patient_entries(patient_name: str):
     container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
 
     selected_patient['name'] = patient_name
-    patient_docs = mongodb_db.find_entries(patient_name)
+    patient_docs = Read().find_entries(patient_name)
 
-    # time_list = []
 
     for doc in patient_docs or []:
         entries = doc.get("entries", {})
