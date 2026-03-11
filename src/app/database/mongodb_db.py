@@ -12,8 +12,6 @@ load_dotenv(ENV_PATH)
 
 MONGO_CREDS = os.getenv("MONGO_CREDS")
 
-print(MONGO_CREDS)
-
 if MONGO_CREDS is None:
     raise ValueError("MONGO_CREDS environment variable required.")
 
@@ -87,7 +85,7 @@ class Read:
         collection = db[collection_name]
         
         doc = collection.find_one({"_id": patient_data["patient_id"]})
-        print(f'@ check_num_entries:   {patient_data["patient_id"]}')
+        # print(f'@ check_num_entries:   {patient_data["patient_id"]}')
 
         if not doc:
             print("No patient found with the given ID.")
@@ -97,8 +95,8 @@ class Read:
 
         if num_entries > 0:
             total_entries.append(num_entries)
-            print(total_entries)
-            print(f"Number of entries for patient {patient_data['patient_name']}: {num_entries}")
+            # print(total_entries)
+            # print(f"Number of entries for patient {patient_data['patient_name']}: {num_entries}")
 
             return total_entries
             
@@ -117,6 +115,7 @@ class Read:
                 projects[patient_id] = result
         return projects
 
+
     def find_patient(self, id: str) -> str:
         global projects
         result = collection.find_one({
@@ -127,14 +126,16 @@ class Read:
             projects[id] = result
         else:
             projects[id] = None
-        print(result)
+        # print(result)
         return result
+
 
     def find_entries(self, patient_name: str):
         results = collection.find({
             "patient_name": patient_name
         })
         return list(results)
+
 
     def find_all_patients(self, client_data: dict):
         collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
@@ -146,7 +147,7 @@ class Read:
         
         # Assuming results is a cursor, we can convert it to a list
         results = list(results)
-        print(results)
+        # print(results)
         return results
 
         # for result in results:
@@ -166,6 +167,7 @@ class Read:
                     tags.append(entry["tags"])
 
         return tags
+
 
 
     def collection_name_for(self, cd) -> str:
@@ -200,7 +202,7 @@ class Update:
 
     def insert_one_entry(self, client_data, entry_data, tag_data):
         collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
-        
+        collection = db[collection_name]
         full_entry = {**entry_data, "tags":tag_data}
         
         collection.update_one(
@@ -210,6 +212,7 @@ class Update:
             upsert=True
         )
         print("Entry has been uploaded")
+
 
     def update_read_receipts(self, patient_data, entry_data):
             collection_name = f"{patient_data['client_name']}_{patient_data['client_id']}_Patients"
@@ -234,6 +237,7 @@ class Update:
 
     def update_llm_tags(self, client_data, entry_data, tag_data):
         collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
+        collection = db[collection_name]
 
         full_entry = {**entry_data, "tags":tag_data}
 

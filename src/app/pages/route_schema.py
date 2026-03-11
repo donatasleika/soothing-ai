@@ -36,7 +36,7 @@ def set_shared_state(client_name, patient_name, token, patient_id):
 def get_shared_state(token):
     doc = collection.find_one({"token": token})
     if not doc:
-        return None, None, None
+        return None, None, None, None
     return doc["client_name"], doc["patient_name"], doc["token"], doc["_id"]
 
 

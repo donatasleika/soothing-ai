@@ -7,8 +7,9 @@ from ..database.mongodb_db import Read, Update
 from ..llm import api
 from datetime import datetime
 # import test_llm
-
+import json
 import httpx
+
 import asyncio
 
 # token = secrets.token_hex(16)
@@ -22,68 +23,177 @@ chat_bubbles = []
 
 
 def register_submit_ui():
-    @ui.page('/{client_name}/{token}')
+    ui.add_head_html("""
+    <style>
+    /* show dot when either the wrapper OR the inner q-btn has .recording */
+    #recordButton.recording .rec-dot,
+    #recordButton .q-btn.recording .rec-dot {
+    display: inline-block;
+    }
+
+    #recordButton .rec-dot {
+    display: none;
+    width: 10px;
+    height: 10px;
+    background: #ff3b30;
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: recPulse 1s infinite;
+    }
+
+    @keyframes recPulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+    }
+    </style>
+    """)
+
+
+    mic_js = r"""
+    (async () => {
+        if (typeof window.toggleRecording !== 'function') {
+            let mediaRecorder = null;
+            let chunks = [];
+            let isRecording = false;
+            let stream = null;
+
+            function nodes(buttonId) {
+                const root = document.getElementById(buttonId);
+                const btn = root ? (root.querySelector('button.q-btn') || root.querySelector('button') || root) : null;
+                return { root, btn };
+            }
+
+            function setRecording(buttonId, on) {
+                const { root, btn } = nodes(buttonId);
+                if (root) root.classList.toggle('recording', on);
+                if (btn) btn.classList.toggle('recording', on);
+            }
+
+            function setBusy(buttonId, on) {
+                const { btn } = nodes(buttonId);
+                if (btn) btn.disabled = on;
+            }
+
+            function pickMimeType() {
+                if (typeof MediaRecorder === 'undefined') return '';
+                if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
+                if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
+                if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
+                return '';
+            }
+
+            window.toggleRecording = async function(buttonId) {
+                if (!stream) stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                if (!isRecording) {
+                    chunks = [];
+                    const mimeType = pickMimeType();
+                    if (!mimeType) {
+                        alert('No supported audio format on this device');
+                        return;
+                    }
+
+                    mediaRecorder = new MediaRecorder(stream, { mimeType });
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data && e.data.size > 0) chunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        setRecording(buttonId, false);
+                        setBusy(buttonId, true);
+                        try {
+                            const blob = new Blob(chunks, { type: mimeType });
+                            const ext = mimeType.includes('webm') ? 'webm' : 'mp4';
+                            const formData = new FormData();
+                            formData.append('file', blob, `audio.${ext}`);
+                            await fetch('/upload', { method: 'POST', body: formData });
+                        } finally {
+                            setBusy(buttonId, false);
+                        }
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    setRecording(buttonId, true);
+                } else {
+                    isRecording = false;
+                    setRecording(buttonId, false);
+                    mediaRecorder.stop();
+                }
+            };
+        }
+    })();
+    """
+
+
+
+    @ui.page('/submit/{client_name}/{token}')
     def submit_entry(client_name, token):
 
-        # Inject JS script on page load
-        ui.add_head_html('''
-        <script>
-        let isRecording = false;
-        let recognition;
-        let finalTranscript = '';
+        # # Inject JS script on page load
+        # ui.add_head_html('''
+        # <script>
+        # let isRecording = false;
+        # let recognition;
+        # let finalTranscript = '';
 
-        if (!('webkitSpeechRecognition' in window)) {
-            alert("Speech recognition not supported in this browser (try Chrome).");
-        } else {
-            recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
+        # if (!('webkitSpeechRecognition' in window)) {
+        #     alert("Speech recognition not supported in this browser (try Chrome).");
+        # } else {
+        #     recognition = new webkitSpeechRecognition();
+        #     recognition.continuous = false;
+        #     recognition.interimResults = true;
+        #     recognition.lang = 'en-US';
 
-        recognition.onresult = function(event) {
-        let interimTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-            } else {
-            interimTranscript += event.results[i][0].transcript;
-            }
-        }
-        const el = document.querySelector('textarea.mic_textarea'); // native textarea
-        if (!el) { console.warn('mic_textarea not found'); return; }
-        el.value = finalTranscript + interimTranscript;
-        el.dispatchEvent(new Event('input', { bubbles: true }));    // notify Quasar/NiceGUI
-        };
+        # recognition.onresult = function(event) {
+        # let interimTranscript = '';
+        # for (let i = event.resultIndex; i < event.results.length; ++i) {
+        #     if (event.results[i].isFinal) {
+        #     finalTranscript += event.results[i][0].transcript;
+        #     } else {
+        #     interimTranscript += event.results[i][0].transcript;
+        #     }
+        # }
+        # const el = document.querySelector('textarea.mic_textarea'); // native textarea
+        # if (!el) { console.warn('mic_textarea not found'); return; }
+        # el.value = finalTranscript + interimTranscript;
+        # el.dispatchEvent(new Event('input', { bubbles: true }));    // notify Quasar/NiceGUI
+        # };
 
-        recognition.onend = function() {
-        isRecording = false;
-        const b = document.getElementById('recordButton');
-        if (b) b.innerText = 'Start Microphone';
-        };
+        # recognition.onend = function() {
+        # isRecording = false;
+        # const b = document.getElementById('recordButton');
+        # if (b) b.innerText = 'Start Microphone';
+        # };
 
-        recognition.onerror = function(e) {
-        console.error('speech error', e);
-        };
+        # recognition.onerror = function(e) {
+        # console.error('speech error', e);
+        # };
 
-        function toggleRecording(buttonId) {
-            const button = document.getElementById(buttonId);
-            if (!isRecording) {
-                finalTranscript = '';
-                recognition.start();
-                isRecording = true;
-                button.innerText = 'Stop Microphone';
-            } else {
-                recognition.stop();
-            }
-        }
-        </script>
-        ''')
+        # function toggleRecording(buttonId) {
+        #     const button = document.getElementById(buttonId);
+        #     if (!isRecording) {
+        #         finalTranscript = '';
+        #         recognition.start();
+        #         isRecording = true;
+        #         button.innerText = 'Stop Microphone';
+        #     } else {
+        #         recognition.stop();
+        #     }
+        # }
+        # </script>
+        # ''')
 
+        ui.timer(0.1, lambda: ui.run_javascript(mic_js), once=True)
 
-
+        with ui.footer().classes('justify-center h-8').style('margin: 0; padding:0;'):
+            ui.markdown('All inputs are secured and only shared with your healthcare professional').style('margin: 0; padding:0;')
 
 
         c_name, p_name, usable_token, patient_id = get_shared_state(token)
+
+        # print(get_shared_state())
 
         print(f'Client Name: {c_name}, Patient Name: {p_name}, Token: {usable_token}')
 
@@ -96,7 +206,7 @@ def register_submit_ui():
 
 
         with ui.row().classes('w-full h-screen items-center justify-center'):
-            with ui.card().classes('max-w-2xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg').style('border: 1px solid #e2e8f0;') \
+            with ui.card().classes('max-w-2xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg').style('border: 1px solid #e2e8f0; padding-bottom: 0;') \
                 .props('rounded=lg shadow=md'):
 
                 with ui.row().classes('items-center justify-between'):
@@ -107,8 +217,16 @@ def register_submit_ui():
                         .props('outlined auto-grow input-class=mic_textarea')  # applies to the native <textarea>
                         .props('id=mic_textbox')  # optional, keep if you want
                         .classes('w-full')
+                        .style('padding: 0; margin:0;')
                     )
 
+                    with ui.row().classes('w-full justify-between'):
+
+                        mic = ui.button(icon='mic').props('flat').style('padding: 0; margin:0;')
+                        # with mic:
+                        mic.on('click', lambda: ui.run_javascript('window.toggleRecording("recordButton")'))
+
+                        ui.button('Send').props('flat').classes('justify-end')
 
                     # ui.on_event('speechText', lambda e: input_box.set_value(e.args))
 
@@ -136,15 +254,25 @@ def register_submit_ui():
                                 'client_name': client_name,
                                 'client_id': 1234, # Need to edit this. It's not important to have the client ID here (maybe)
                             }
-                            print(client_name)
+                            # print(client_name)
+
+                            async def poll_once():
+                                async with httpx.AsyncClient() as client:
+                                    try:
+                                        resp = await client.get('http://localhost:8080/get_transcript')
+                                        if resp.status_code == 200:
+                                            result = resp.json()
+                                            input_box.text = result.get('text', '')
+                                            
+
+                                    except Exception as e:
+                                        print('Error fetching user transcript:', e)
                             
-                            
-                            # tags = test_llm.extract_content(message_text)
-                            # print(tags)
+                            ui.timer(1.0, callback=lambda: asyncio.create_task(poll_once))
 
                             entries = (Read().find_entries(p_name)[0]["entries"])
 
-                            print(f'pewp: {len(entries)}')
+                            # print(f'pewp: {len(entries)}')
 
         # The user's entry object creation
                             new_entry_id = len(entries) + 1 if entries else 1
@@ -162,48 +290,139 @@ def register_submit_ui():
                                 'read': False,
                             }
 
+                            fallback_tags = {'sentiment': ['sample'], 'tone': ['sample', 'sample'], 'keywords': ['sample', 'sample']}
+                            sentiments = ['positive', 'neutral', 'negative']
 
-                            async def push_entry_to_db(entry_data):
-                                tag_data = {'sentiment': ['sample'], 'tone': ['sample', 'sample'], 'keywords': ['sample', 'sample']}
-                                sentiments = ['positive', 'neutral', 'negative']
+                            # Insert sample data as a fallback
 
-                                # Insert sample data as a fallback
-                                Update().insert_one_entry(client_data, entry_data, tag_data)
 
-                                # Fetch LLM tagging
-                                result = asyncio.create_task(api.get_completions(entry_data))
+                            async def fetch_llm_tagging(entry_data):
 
-                                # Checking LLM outputted tags
-                                for tag_object in result:
-                                    key, value = tag_object
+                                try:
+
+
+                                    # Fetch LLM tagging
+                                    counter = 0
+
+                                    # asyncio.create_task(api.get_completions(entry_data, counter))
+                                    result = await api.get_completions(entry_data, counter)
+
+                                    return result
+
+                                except Exception as e:
+                                    print(e)
+
+                                    upd = Update()
+                                    await asyncio.to_thread(upd.insert_one_entry, client_data, entry_data, fallback_tags)
+
+
+                            
+
+                            result = await fetch_llm_tagging(entry_data)
+
+                            print(f'LLM Tagging: {result}')
+                            print(type(result))
+
+                            llm_resulted_tags = result['choices'][0]['message']['content']
+
+                            llm_resulted_tags_dict = json.loads(llm_resulted_tags)
+                            # print(type(llm_resulted_tags_dict))
+                            # print(llm_resulted_tags_dict)
+
+
+                            async def parse_output(llm_resulted_tags_dict):
+                                final_llm_output = {}
+
+                                try:
 
                                     # Sense-checking keys (sentiment, tone, keywords) and values
-                                    if isinstance(key, str):
-                                        if key in tag_data:
-                                            # Sense-checking values 
-                                            if isinstance(value, list):
-                                                for x in value:
-                                                    llm_sentiment = [y for y in sentiments if x in y]
-                                                    tag_data[key] = llm_sentiment
-                                            elif isinstance(value, str):
-                                                    tag_data[key] = value
+                                    for key, value in llm_resulted_tags_dict.items():
+                                        # print(type(key))
+                                        # print(key)
+                                        if key in fallback_tags.keys():
+                                            # print(key)
+
+                                    # Sentiment parsing
+                                            if key == 'sentiment':
+                                                # Sense-checking values 
+                                                if isinstance(value, list):
+                                                    for x in value:
+                                                        llm_sentiment = [y for y in sentiments if x in y]
+                                                        print(f'Outputted list of sentiments: {llm_sentiment}')
+                                                        # tag_data[key] = llm_sentiment
+                                                elif isinstance(value, str):
+                                                        print(f'One value for sentiment: {value}')
+                                                        final_llm_output[key] = value
+                                    # Tone parsing
+                                            elif key == 'tone':
+                                                if isinstance(value, list):
+                                                    for x in value:
+                                                        llm_tone = [y for y in sentiments if x in y]
+                                                        print(f'Outputted list of tones: {llm_tone}')
+
+                                                        final_llm_output = key[llm_tone]
+
+                                                elif isinstance(value, str):
+                                                    if ',' in value:
+                                                        tone_string_split = value.split(',')
+                                                        print(f'Outputted, parsed tone list: {tone_string_split}')
+                                                        final_llm_output[key] = tone_string_split                                                    
+                                                    else:
+                                                        final_llm_output[key] = value
+
+
+                                                    print(value)
+                                    # Keywords parsing
+                                            elif key == 'keywords':
+                                                print(key)
+                                                print(type(key))
+                                                if isinstance(value, list):
+                                                    for x in value:
+                                                        print(type(x))
+                                                        llm_keywords = [y for y in sentiments if x in y]
+                                                        print(llm_keywords)
+                                                        print(f'Outputted list of keywords: {llm_keywords}')
+
+                                                        final_llm_output[key] = llm_keywords
+
+                                                elif isinstance (value, str):
+                                                    if ',' in value:
+                                                        keywords_string_split = value.split(',')
+                                                        print(f'Outputted, parsed keyword list: {keywords_string_split}')
+
+                                                        final_llm_output[key] = keywords_string_split
+                                                    else:
+                                                        final_llm_output[key] = keywords_string_split
+
+
+                                                print(value)
+                                            else:
+                                                print('Value is: ' + value)
                                         else:
-                                            print('Value is: ' + key)
-                                    else:
-                                        print('Key type: ' + type(key))
+                                            print('Key type: ' + key)
+                
+                
+                                    return final_llm_output                
+                
+                                except Exception as e:
+                                    print(e)
 
-                                # Update entry with LLM tags
-                                Update().update_llm_tags(client_data, entry_data, tag_data)
+                                    upd = Update()
+                                    await asyncio.to_thread(upd.insert_one_entry, client_data, entry_data, fallback_tags)
 
 
 
-                            asyncio.create_task(push_entry_to_db(entry_data))
 
-                            # entry_position = len(total_entries) + 1 if total_entries else 1
 
-                            # print(patient_data)
-                            # print(entry_position)
+                            # Update entry with LLM tags
+                            final_output = await parse_output(llm_resulted_tags_dict)
+                            print(f'Final Output: {final_output}')
+
+                            Update().update_llm_tags(client_data, entry_data, final_output)
+
+
                             
+
 
                     input_box.on('keydown', handle_key)
 

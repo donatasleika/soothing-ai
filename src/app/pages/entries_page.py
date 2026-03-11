@@ -145,13 +145,19 @@ def render_entry_card(container, entry, index, patient_name):
                             
                         with ui.row():
                             ui.label('Tone:').classes('text-s').style('line-height: 30px; text-align: center; white-space: nowrap; padding-right: 5px; padding-left: 5px;')
-                            for one in tone:
-                                ui.label(one).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
+                            if isinstance(tone, list):
+                                for one in tone:
+                                    ui.label(one).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
+                            elif isinstance(tone, str):
+                                    ui.label(tone).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
 
                         with ui.row():
                             ui.label('Keywords:').classes('text-s').style('line-height: 30px; text-align: center; white-space: nowrap; padding-right: 5px; padding-left: 5px;')
-                            for word in keywords:
-                                ui.label(word).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
+                            if isinstance(keywords, list):
+                                for word in keywords:
+                                    ui.label(word).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
+                            elif isinstance(keywords, str):
+                                    ui.label(keywords).classes('rounded-lg').style('height: 30px; background-color: #f0f0f0; padding: 1; box-shadow: none; display: flex; align-items: center;')
 
 
                     taggers.set_visibility(True)
@@ -164,77 +170,99 @@ def render_entry_card(container, entry, index, patient_name):
 normalized_name = client_data['client_name'].lower().replace(' ', '-')
 ROUTE_CLIENT = f'/{normalized_name}/entries'
 
+ROUTE_PATIENT_PAGE = f'/{normalized_name}/entries/{{patient_name}}'
+
+
 
 def register_entries_ui():
     @ui.page(ROUTE_CLIENT)
     def main():
-            ui.add_body_html('''
-            <style>
-            * {
-                margin: 1 !important;
-                padding: 1 !important;
-                box-sizing: border-box;
-            }
-            </style>
-            ''')
 
-        # with ui.row().classes('w-full h-screen flex-nowrap items-stretch'):
-            # Sidebar
-            # with ui.element('aside').classes('w-60 h-full bg-gray-100').style('padding: 0; margin-right: 5px; display: flex; flex-direction: column; gap: 0;'):
-            with ui.left_drawer(top_corner=True, bottom_corner=True).classes('w-60 h-full bg-gray-100').style('padding: 0; margin-right: 5px; display: flex; flex-direction: column; gap: 0;'):
-                with ui.row().classes('justify-center'):
-                    # ui.label('Patients').classes('text-lg font-bold mb-2')
-                    ui.label('')
-                patients = Read().find_all_patients(client_data)
+        pass
+            # ui.add_body_html('''
+            # <style>
+            # * {
+            #     margin: 1 !important;
+            #     padding: 1 !important;
+            #     box-sizing: border-box;
+            # }
+            # </style>
+            # ''')
 
-                for patient in patients:
-                    patient_name = patient['patient_name']
 
-                    def load_entries(patient_name=patient_name):
-                        selected_patient['name'] = patient_name
-                        patient_docs = Read().find_entries(patient_name)
-                        entries_container.clear()
-                        # print(f'Entry 1: {patient_docs}')
 
-                        for doc in patient_docs:
-                            print(f'Loaded doc: {doc}')
-                            entries = doc.get("entries", [])
-                            entries.sort(key=lambda x: x.get("time_of_entry", ""), reverse=True) 
-
-                            for idx, entry in enumerate(entries):
-                                display_idx = len(entries) - idx -1
-                                render_entry_card(entries_container, normalize_entry(entry), display_idx, patient_name)
-
-                    ui.button(patient_name).props('flat color=primary') \
-                        .on_click(load_entries).classes('w-full').style('margin: 0; padding: 8px;')
-                    
-                    # for p in patients:
-                    #     ui.button(p['patient_name']).props('flat color=primary') \
-                    #         .on_click(lambda p=p: ui.open(f"/entries/{p['patient_name']}")) \
-                    #         .classes('w-full')
-    
-            with ui.column().classes('flex-1 min-w-0 h-full p-6 overflow-auto'):
-                # with ui.card().classes('w-full'):
-                    # ui.label('Entries').classes('text-2xl')
-                    with ui.row():
-                        print('')
-                    global entries_container
-                    # with ui.row().classes('w-full justify-between items-center').style('margin-bottom: 20px;'):
-                        # ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg')
-                    entries_container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
+            
                     
 ROUTE_PATIENT_PAGE = f'/{normalized_name}/entries/{{patient_name}}'
 
 @ui.page(ROUTE_PATIENT_PAGE)
 def patient_entries(patient_name: str):
 
-    with ui.column().classes('w-full'):
+
+
+    with ui.header().classes('h-8').style('margin: 0; padding:0;'):
+        ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').style('padding: 0; padding-top: 0;')
+
+
+    with ui.left_drawer().classes('w-20 h-full border').style('padding: 0; display: flex; gap: 0;') as left_drawer:
+
+                with ui.row().classes('w-full flex-nowrap items-stretch'):
+            # Sidebar
+
+                    with ui.element('aside').classes('w-full h-full').style('padding: 0; display: flex; flex-direction: column; gap: 0;'):
+            
+                        with ui.row().classes('justify-center'):
+                    # ui.label('Patients').classes('text-lg font-bold mb-2')
+                            ui.label('')
+                            patients = Read().find_all_patients(client_data)
+
+                        for patient in patients:
+                            patient_name = patient['patient_name']
+
+            # with ui.row().classes('w-full h-screen flex-nowrap items-stretch'):
+
+                        def load_entries(patient_name=patient_name):
+                            selected_patient['name'] = patient_name
+                            patient_docs = Read().find_entries(patient_name)
+                            entries_container.clear()
+                            # print(f'Entry 1: {patient_docs}')
+
+                            for doc in patient_docs:
+                                print(f'Loaded doc: {doc}')
+                                entries = doc.get("entries", [])
+                                entries.sort(key=lambda x: x.get("time_of_entry", ""), reverse=True) 
+
+                                for idx, entry in enumerate(entries):
+                                    display_idx = len(entries) - idx -1
+                                    render_entry_card(entries_container, normalize_entry(entry), display_idx, patient_name)
+
+                        ui.button(patient_name).props('flat color=primary') \
+                            .on_click(load_entries).classes('w-full').style('margin: 0; padding: 8px;')
+                        
+                        for p in patients:
+                            ui.button(p['patient_name']).props('flat color=primary') \
+                                .on_click(lambda p=p: ui.link(f"/entries/{p['patient_name']}")) \
+                                .classes('w-full')
+
+
+                        global entries_container
+                        # with ui.row().classes('w-full justify-between items-center').style('margin-bottom: 20px;'):
+                        #     ui.label(f"Selected Patient: {selected_patient['name'] or 'None'}").classes('text-lg')
+                        entries_container = ui.row().classes('justify-left').style('margin: 0;')
+
+
+    with ui.column().classes('w-full items-center'):
         top = ui.column().classes('w-full items-center')
         # ui.separator()
-        cards = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
+        cards = ui.row().classes('justify-center').style('margin: 0; padding: 6px;')
+
+# Footer
+    with ui.footer(value=True).classes('justify-center h-8').style('margin: 0; padding:0;'):
+        pagination = ui.pagination(1, 5, direction_links=True).props('flat color=white')
+        
 
     # build a container that belongs to THIS page
-    container = ui.row().classes('justify-left').style('margin: 0; padding: 8px;')
+    container = ui.row().classes('justify-left').style('margin: 0; padding: 6px;')
 
     selected_patient['name'] = patient_name
     patient_docs = Read().find_entries(patient_name)
@@ -243,7 +271,6 @@ def patient_entries(patient_name: str):
     for doc in patient_docs or []:
         entries = doc.get("entries", {})
         entries.sort(key=lambda x: x.get("time_of_entry", ""), reverse=True)
-        # entry_times = entries["time_of_entry", ""]
 
 
         # all_entries = mongodb_db.find_entries(patient_name=selected_patient['name'])

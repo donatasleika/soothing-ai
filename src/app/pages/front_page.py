@@ -66,6 +66,21 @@ def register_admin_ui():
     @ui.page('/')
     async def main(patient_name: str = patient_state_name.patient_name, total_entries: int = 0, client_name: str = client_name):
 
+        with ui.header().classes('justify-between items-center'):
+            with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
+
+                    
+                # Exit Button
+                ui.button(icon='power_settings_new', on_click=lambda: ui.run_javascript("window.location.href='/login'")) \
+                    .tooltip('Logout') \
+                    .classes('justify-right')
+                    # .props('flat') \
+            # Settings Button
+            ui.button(icon='settings', on_click='') \
+                .classes('justify-right')
+                # .props('flat') \
+          
+
         # populate_patient_cards()
 
         new_patient_dialog = ui.dialog()
@@ -117,8 +132,6 @@ def register_admin_ui():
                         
                         url_dialog.close()
                         await url_dialog_form(patient_name, private_url, patient_id)
-
-
 
                     # New Patient Form
                     async def new_patient_form():
@@ -174,9 +187,6 @@ def register_admin_ui():
                 # RIGHT Group
                 with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
 
-                    # # Settings Button
-                    # ui.button(icon='settings', on_click='') \
-                    #     .props('flat') \
                     
                     # Exit Button
                     ui.button(icon='power_settings_new', on_click=lambda: ui.run_javascript("window.location.href='/login'")) \
@@ -332,11 +342,12 @@ def register_admin_ui():
                                     
                                     # Write-Up Button
                                     ui.button('Write-Up') \
+                                        .on_click(f"/{normalized}/writeup/{quote(patient_name)}") \
                                         .classes('text-white text-xs rounded-md hover:bg-blue-600') \
                                         .style('flex: 1; height: 32px; background-color: #4a90e2;')
 
                                     # Show Trends Button
-                                    ui.button('Show Trends') \
+                                    ui.button('Trends') \
                                         .on_click(f"/{normalized}/trends/{quote(patient_name)}") \
                                         .classes('text-white text-xs rounded-md hover:bg-gray-300') \
                                         .style('flex: 1; height: 32px;')
@@ -366,6 +377,3 @@ def register_admin_ui():
 
 secret_key = secrets.token_hex(16)
 
-
-# if __name__ == '__main__':
-ui.run(storage_secret=secret_key, port=8080, title='Soothing AI - Patient Management', favicon='https://example.com/favicon.ico', dark=False, reload=True)
