@@ -66,20 +66,43 @@ def register_admin_ui():
     @ui.page('/')
     async def main(patient_name: str = patient_state_name.patient_name, total_entries: int = 0, client_name: str = client_name):
 
-        with ui.header().classes('justify-between items-center'):
-            with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
+        with ui.header().style('padding: 0; padding-top: 0;'):
 
+            with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; margin: 0; padding: 0px;'):
+
+                #  LEFT Group
+                with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
+
+                    # Manage Programmes
+                    ui.button(icon='psychology_alt', on_click='') \
+                        .props('flat color=white') \
+                        .tooltip('Manage Programmes') \
+                        .classes('orientation-vertical justify-start')
+                
+                    # View Entries Button
+                    ui.button(icon='layers', on_click=lambda: ui.run_javascript("window.location.href='/entries'")) \
+                        .props('flat color=white') \
+                        .tooltip('View Entries') \
+                        .style('color: white;') \
+                        .classes('orientation-vertical justify-start')
+                
+
+
+                # RIGHT Group
+                with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
+
+                    # Settings Button
+                    ui.button(icon='settings', on_click='') \
+                        .classes('justify-right') \
+                        .props('flat color=white') \
                     
-                # Exit Button
-                ui.button(icon='power_settings_new', on_click=lambda: ui.run_javascript("window.location.href='/login'")) \
-                    .tooltip('Logout') \
-                    .classes('justify-right')
-                    # .props('flat') \
-            # Settings Button
-            ui.button(icon='settings', on_click='') \
-                .classes('justify-right')
-                # .props('flat') \
-          
+                    # Exit Button
+                    ui.button(icon='power_settings_new', on_click=lambda: ui.run_javascript("window.location.href='/login'")) \
+                        .tooltip('Logout') \
+                        .props('flat color=white') \
+        
+
+
 
         # populate_patient_cards()
 
@@ -89,113 +112,95 @@ def register_admin_ui():
 
         # ui.label({client_data['client_name'][0]}).classes('text-h4 font-bold').style('margin-bottom: 20px;')
         
-        with ui.card().classes('w-full justify-start').style('width: 100%; max-width: 100%; max-length: 100%; margin: 0 auto; padding: 20px; overflow-x: hidden;'):
-            with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; '):
+        # with ui.card().classes('w-full justify-start').style('width: 100%; max-width: 100%; max-length: 100%; margin: 0 auto; padding: 20px; overflow-x: hidden;'):
+        #     with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; '):
 
-                #  LEFT Group
-                with ui.row().classes('w-full items-center gap-4'):
+        #         #  LEFT Group
+        #         with ui.row().classes('w-full items-center gap-4'):
 
-                    # Add New Patient Button
-                    ui.button(icon='add', on_click= lambda: new_patient_form()) \
-                        .props('flat') \
-                        .tooltip('Add New Patient') \
-                        .classes('orientation-vertical')
+        #             # Add New Patient Button
+        #             ui.button(icon='add', on_click= lambda: new_patient_form()) \
+        #                 .props('flat') \
+        #                 .tooltip('Add New Patient') \
+        #                 .classes('orientation-vertical')
                 
-                    async def submit(name_input) -> None:
-                        new_patient_dialog.close()
+        async def submit(name_input) -> None:
+            new_patient_dialog.close()
 
-                        patient_name = name_input.value
+            patient_name = name_input.value
+            
+
+            patient_id = new_patient_id()
+            private_url = await create_private_url(patient_name, patient_id)
+
+
+            Update().insert_one_patient(
+                client_data=client_data,
+                patient_data={
+                    'patient_name': patient_name,
+                    'patient_id'  : patient_id,
+                    'private_url_token': private_url.split('/')[-1],
+                    'client_id'   : client_data['client_id'],
+                }
+            )
+
+
+            patient_state_name.patient_name = name_input.value
+
+            try:
+
+                await new_patient(patient_name, total_entries, patient_id)
+            except Exception as e:
+                print(e)
+            
+            url_dialog.close()
+            await url_dialog_form(patient_name, private_url, patient_id)
+
+        # New Patient Form
+        async def new_patient_form():
+            new_patient_dialog.clear()
+
+            with new_patient_dialog, ui.card():
+                with ui.column().classes('gap-4'):
+
+                    # global name_input
+
+                    name_input = ui.input(label='Patient Name')
+
+
+                    with ui.row():
+                        ui.radio(options=['Default', 'CBT Programme', 'Custom Programme']) \
+                            .classes('w-full text-xs rounded-lg') \
+                            .style('width: 178px; font-size: 10px;')
                         
+                    ui.button('Submit', on_click= lambda: submit(name_input)) \
+                        .classes('text-white bg-blue-500 hover:bg-blue-600 w-full rounded-lg')
 
-                        patient_id = new_patient_id()
-                        private_url = await create_private_url(patient_name, patient_id)
+            new_patient_dialog.open()
 
+        async def url_dialog_form(patient_name: str, private_url: str, patient_id: str):
+            url_dialog.clear()
 
-                        Update().insert_one_patient(
-                            client_data=client_data,
-                            patient_data={
-                                'patient_name': patient_name,
-                                'patient_id'  : patient_id,
-                                'private_url_token': private_url.split('/')[-1],
-                                'client_id'   : client_data['client_id'],
-                            }
-                        )
+            with url_dialog, ui.card():
+                with ui.row().classes('w-full justify-between items-center'):
+                    ui.label(f'{patient_name} URL').classes('text-lg font-bold')
+                    ui.input(value=private_url).props('readonly').style('opacity: 0; height: 0; padding: 0; margin: 0; border:0;')
 
+                    ui.button(icon='content_copy', on_click=lambda url=private_url: ui.run_javascript(
+                        f'navigator.clipboard.writeText("{url}")') or ui.notify('Copied!')
+                    ).props('flat').classes('justify-start')
 
-                        patient_state_name.patient_name = name_input.value
+                ui.label(private_url).classes('text-xs')
 
-                        try:
+            url_dialog.open()
 
-                            await new_patient(patient_name, total_entries, patient_id)
-                        except Exception as e:
-                            print(e)
-                        
-                        url_dialog.close()
-                        await url_dialog_form(patient_name, private_url, patient_id)
-
-                    # New Patient Form
-                    async def new_patient_form():
-                        new_patient_dialog.clear()
-
-                        with new_patient_dialog, ui.card():
-                            with ui.column().classes('gap-4'):
-
-                                # global name_input
-
-                                name_input = ui.input(label='Patient Name')
-
-
-                                with ui.row():
-                                    ui.radio(options=['Default', 'CBT Programme', 'Custom Programme']) \
-                                        .classes('w-full text-xs rounded-lg') \
-                                        .style('width: 178px; font-size: 10px;')
-                                    
-                                ui.button('Submit', on_click= lambda: submit(name_input)) \
-                                    .classes('text-white bg-blue-500 hover:bg-blue-600 w-full rounded-lg')
-
-                        new_patient_dialog.open()
-
-                    async def url_dialog_form(patient_name: str, private_url: str, patient_id: str):
-                        url_dialog.clear()
-
-                        with url_dialog, ui.card():
-                            with ui.row().classes('w-full justify-between items-center'):
-                                ui.label(f'{patient_name} URL').classes('text-lg font-bold')
-                                ui.input(value=private_url).props('readonly').style('opacity: 0; height: 0; padding: 0; margin: 0; border:0;')
-
-                                ui.button(icon='content_copy', on_click=lambda url=private_url: ui.run_javascript(
-                                    f'navigator.clipboard.writeText("{url}")') or ui.notify('Copied!')
-                                ).props('flat').classes('justify-start')
-
-                            ui.label(private_url).classes('text-xs')
-
-                        url_dialog.open()
-
-
-                    # View Entries Button
-                    ui.button(icon='layers', on_click=lambda: ui.run_javascript("window.location.href='/entries'")) \
-                        .props('flat') \
-                        .tooltip('View Entries') \
-                        .classes('orientation-vertical justify-start')
-                
-                    ui.button(icon='settings', on_click='') \
-                        .props('flat') \
-                        .tooltip('Manage Programmes') \
-                        .classes('orientation-vertical justify-start')
-                
-
-                # RIGHT Group
-                with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
-
-                    
-                    # Exit Button
-                    ui.button(icon='power_settings_new', on_click=lambda: ui.run_javascript("window.location.href='/login'")) \
-                        .tooltip('Logout') \
-                        .props('flat') \
 
         # Patient Cards Section
         with ui.row().classes('w-full justify-between items-start').style('padding-top: 2px;'):
             # with ui.card().classes('bg-gray-100 p-6 w-full'):
+
+                with ui.page_sticky(x_offset=18, y_offset=18):
+                    ui.button(icon='add', on_click= lambda: new_patient_form())
 
                 async def delete_patient(patient_card, new_patient_id):
                     patient_card.delete()

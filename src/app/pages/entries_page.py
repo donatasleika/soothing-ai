@@ -200,11 +200,48 @@ def patient_entries(patient_name: str):
 
 
 
-    with ui.header().classes('h-8').style('margin: 0; padding:0;'):
-        ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').style('padding: 0; padding-top: 0;')
+    with ui.header().style('padding: 0; padding-top: 0;'):
+
+    # with ui.header().classes('w-full justify-start').style('margin: 0; padding: 5;'):
+        with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; margin: 0; padding: 0px;'):
+
+            #  LEFT Group
+            with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
+
+                ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').classes('border-0').props('flat color=white')
 
 
-    with ui.left_drawer().classes('w-20 h-full border').style('padding: 0; display: flex; gap: 0;') as left_drawer:
+                # Manage Programmes
+                ui.button(icon='psychology_alt', on_click='') \
+                    .props('flat color=white') \
+                    .tooltip('Manage Programmes') \
+                    .classes('orientation-vertical justify-start')
+            
+                # View Entries Button
+                ui.button(icon='layers', on_click=lambda: ui.run_javascript("window.location.href='/entries'")) \
+                    .props('flat color=white') \
+                    .tooltip('View Entries') \
+                    .style('color: white;') \
+                    .classes('orientation-vertical justify-start')
+            
+
+
+            # RIGHT Group
+            with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
+
+                # Settings Button
+                ui.button(icon='settings', on_click='') \
+                    .classes('justify-right') \
+                    .props('flat color=white') \
+                
+                # Exit Button
+                ui.button(icon='power_settings_new', on_click=lambda: ui.run_javascript("window.location.href='/login'")) \
+                    .tooltip('Logout') \
+                    .props('flat color=white') \
+    
+
+
+    with ui.left_drawer().classes('w-20 h-full border').props('width=240').style('padding: 0; display: flex; gap: 0;') as left_drawer:
 
                 with ui.row().classes('w-full flex-nowrap items-stretch'):
             # Sidebar
