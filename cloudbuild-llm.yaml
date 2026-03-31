@@ -1,13 +1,12 @@
 # Build & deploy LLM (llm-service/) to Cloud Run with a GCS mount
-# Place at repo root. Trigger on changes to llm-service/**
 
 substitutions:
   _REGION: europe-west1
   _SERVICE: llama-cpu
   _REPO: llm-repo
   _IMAGE: llama-cpu
-  _BUCKET: gs://my_models         # underscore is OK for mounting
-  _MOUNT_PATH: /models            # visible path inside the container
+  _BUCKET: gs://my_models      
+  _MOUNT_PATH: /models           
   _SA: llm-model-reader@fluted-haven-467020-v1.iam.gserviceaccount.com
 
 steps:
