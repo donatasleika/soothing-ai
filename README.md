@@ -1,7 +1,7 @@
 # Soothing-AI - Inner Mirror
 
 # Purpose
-Minimal prototype demonstrating how medical professionals can track patient states between interventions.
+Working MVP demonstrating how medical professionals can track patient states between interventions.
 
 # Features
 - API-style request/response handling
@@ -9,10 +9,10 @@ Minimal prototype demonstrating how medical professionals can track patient stat
 - Deterministic LLM output validation
 - Safety-first architecture
 - Human-in-the-loop control points
-- End-to-end encryption (E2EE)
+- End-to-end encryption (Feature Pending)
 
 # Process Loop
-User Input → Validation → Model Inference → Structured Output → Audit / Logging
+User Input → Validation → Model Inference → Structured Output → Audit / Logging -> Consolidation -> Session Prep
 
 # Tech
-Python, FastAPI, NiceGui, containerised LLM runtime, structured LLM outputs
+Python, FastAPI, NiceGUI, containerised LLM runtime, structured LLM outputs
