@@ -1,4 +1,4 @@
-# Soothing-AI - Inner Mirror
+# Soothing-AI - Reflective Mental Health Assistance
 
 # Purpose
 Working MVP demonstrating how medical professionals can track patient states between interventions.
