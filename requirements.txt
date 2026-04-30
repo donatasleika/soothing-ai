@@ -138,7 +138,6 @@ watchfiles==1.1.0
 wcwidth==0.2.13
 websockets==15.0.1
 widgetsnbextension==4.0.15
-wordcloud @ file:///Users/donatas/Desktop/Darbas/Python/projects/soothing.ai/soothing-ai/word_cloud
 wsproto==1.2.0
 xyzservices==2025.11.0
 yarl==1.20.1
