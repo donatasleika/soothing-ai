@@ -239,7 +239,7 @@ class Update:
         pass
 
 
-    def insert_one_entry(self, client_data, entry_data):
+    def insert_one_entry(self, client_data, entry_data, tag_data):
         collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
         collection = db[collection_name]
         full_entry = {**entry_data, "tags":tag_data}

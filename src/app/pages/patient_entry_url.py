@@ -169,7 +169,7 @@ def register_submit_ui():
                     with ui.row().classes('w-full justify-between'):
 
                         mic = ui.button(icon='mic').props('flat').style('padding: 0; margin:0;')
-                        # with mic:
+                    
                         mic.on('click', lambda: ui.run_javascript('window.toggleRecording("recordButton")'))
 
                         ui.button('Send').props('flat').classes('justify-end')
