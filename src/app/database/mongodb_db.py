@@ -133,8 +133,9 @@ class Read:
 
 
     def find_entries(self, patient_name: str):
+        print(patient_name)
         results = collection.find({
-            "patient_name": patient_name["patient_name"]
+            "patient_name": patient_name
         })
         return list(results)
 

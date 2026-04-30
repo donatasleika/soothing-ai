@@ -90,10 +90,10 @@ def register_admin_ui():
                         .classes('orientation-vertical justify-start')
                     
                     # Manage Programmes
-                    ui.button(text='Programmes', on_click='') \
-                        .props('flat color=white') \
-                        .tooltip('Manage Programmes') \
-                        .classes('orientation-vertical justify-start')
+                    # ui.button(text='Programmes', on_click='') \
+                    #     .props('flat color=white') \
+                    #     .tooltip('Manage Programmes') \
+                    #     .classes('orientation-vertical justify-start')
                 
                 
                     # Writeup Page
@@ -284,7 +284,7 @@ def register_admin_ui():
                                     with ui.element().classes('ml-auto'):
                                         with ui.dropdown_button().props('flat color=black').classes('text-h7').style('color: black;'):
                                             with ui.column().classes('gap-0'):
-                                                ui.button('Edit Programme').on_click(lambda: ui.notify('Edit Programme clicked!')).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px;').classes('text-xs w-full')
+                                                ui.button('Edit Programme').on_click(lambda: ui.notify('Pending Feature!')).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px;').classes('text-xs w-full')
                                                 ui.button('Archive Patient').on_click(lambda c=patient_card, pid=patient_id: delete_patient(c, pid)).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px; justify-content: flex-start; text-align: left;').classes('text-[9px] w-full q-pa-none')
                                             # ui.button(icon='menu').classes('text-h7').props('flat').style('foreground-color: black;')
                                         

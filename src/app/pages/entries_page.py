@@ -211,10 +211,10 @@ def register_entries_ui():
                         .classes('orientation-vertical justify-start')
                     
                     # Manage Programmes
-                    ui.button(text='Programmes', on_click='') \
-                        .props('flat color=white') \
-                        .tooltip('Manage Programmes') \
-                        .classes('orientation-vertical justify-start')
+                    # ui.button(text='Programmes', on_click='') \
+                    #     .props('flat color=white') \
+                    #     .tooltip('Manage Programmes') \
+                    #     .classes('orientation-vertical justify-start')
                 
                 
                     # Writeup Page
