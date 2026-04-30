@@ -1,7 +1,7 @@
 from nicegui import ui, app, events, storage
 import secrets
 import uuid
-from ..database.mongodb_db import Read, Update, Delete
+from ..database.mongodb_db import Read, Update, Delete, Create
 import json
 import os
 from types import SimpleNamespace
@@ -21,6 +21,8 @@ client_data = {
     'client_name': client_name,
     'client_id': '1234'
 }
+
+normalized_name = client_data['client_name'].lower().replace(' ', '-')
 
 # Working patient_id
 patient_cards = {}
@@ -63,7 +65,7 @@ async def create_private_url(patient_name: str, patient_id: str) -> str:
 
 
 def register_admin_ui():
-    @ui.page('/')
+    @ui.page(f'/{normalized_name}')
     async def main(patient_name: str = patient_state_name.patient_name, total_entries: int = 0, client_name: str = client_name):
 
         with ui.header().style('padding: 0; padding-top: 0;'):
@@ -73,20 +75,34 @@ def register_admin_ui():
                 #  LEFT Group
                 with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
 
-                    # Manage Programmes
-                    ui.button(icon='psychology_alt', on_click='') \
+                    # Front Page
+                    ui.button(text='Home', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}'")) \
                         .props('flat color=white') \
-                        .tooltip('Manage Programmes') \
+                        .tooltip('Home') \
                         .classes('orientation-vertical justify-start')
-                
+
+
                     # View Entries Button
-                    ui.button(icon='layers', on_click=lambda: ui.run_javascript("window.location.href='/entries'")) \
+                    ui.button(text='Entries', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/entries'")) \
                         .props('flat color=white') \
                         .tooltip('View Entries') \
                         .style('color: white;') \
                         .classes('orientation-vertical justify-start')
+                    
+                    # Manage Programmes
+                    ui.button(text='Programmes', on_click='') \
+                        .props('flat color=white') \
+                        .tooltip('Manage Programmes') \
+                        .classes('orientation-vertical justify-start')
                 
-
+                
+                    # Writeup Page
+                    ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeup'")) \
+                        .props('flat color=white') \
+                        .tooltip('Writeups') \
+                        .style('color: white;') \
+                        .classes('orientation-vertical justify-start')
+                
 
                 # RIGHT Group
                 with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
@@ -236,6 +252,11 @@ def register_admin_ui():
                                         # Entries
                                         with ui.element().style('position: relative; display: inline-block;'):
                                             with ui.card().classes('rounded-lg').style('width: 80px; height: 30px; background-color: white; border: 1px solid black; box-shadow: none; padding: 0; display: flex; align-items: center; justify-content: center;'):
+                                                if total_entries:
+                                                    pass
+                                                elif not total_entries:
+                                                    total_entries = '0'
+                                                
                                                 ui.link(f'{total_entries} Entries', target=f"/{normalized}/entries/{quote(patient_name)}").classes('text-xs text-blue-500 underline').style('line-height: 30px; text-align: center; width: 100%;')
                                             
 
@@ -264,7 +285,7 @@ def register_admin_ui():
                                         with ui.dropdown_button().props('flat color=black').classes('text-h7').style('color: black;'):
                                             with ui.column().classes('gap-0'):
                                                 ui.button('Edit Programme').on_click(lambda: ui.notify('Edit Programme clicked!')).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px;').classes('text-xs w-full')
-                                                ui.button('Delete Patient').on_click(lambda c=patient_card, pid=patient_id: delete_patient(c, pid)).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px; justify-content: flex-start; text-align: left;').classes('text-[9px] w-full q-pa-none')
+                                                ui.button('Archive Patient').on_click(lambda c=patient_card, pid=patient_id: delete_patient(c, pid)).props('flat color=black').style('color: black; padding-top: 0px; padding-bottom: 0px; padding-left: 12px; padding-right: 12px; font-size: 9px; justify-content: flex-start; text-align: left;').classes('text-[9px] w-full q-pa-none')
                                             # ui.button(icon='menu').classes('text-h7').props('flat').style('foreground-color: black;')
                                         
  

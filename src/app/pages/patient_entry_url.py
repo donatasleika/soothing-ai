@@ -107,7 +107,7 @@ def register_submit_ui():
                             const ext = mimeType.includes('webm') ? 'webm' : 'mp4';
                             const formData = new FormData();
                             formData.append('file', blob, `audio.${ext}`);
-                            await fetch('/upload', { method: 'POST', body: formData });
+                            await fetch('/upload_user', { method: 'POST', body: formData });
                         } finally {
                             setBusy(buttonId, false);
                         }
@@ -131,60 +131,6 @@ def register_submit_ui():
     @ui.page('/submit/{client_name}/{token}')
     def submit_entry(client_name, token):
 
-        # # Inject JS script on page load
-        # ui.add_head_html('''
-        # <script>
-        # let isRecording = false;
-        # let recognition;
-        # let finalTranscript = '';
-
-        # if (!('webkitSpeechRecognition' in window)) {
-        #     alert("Speech recognition not supported in this browser (try Chrome).");
-        # } else {
-        #     recognition = new webkitSpeechRecognition();
-        #     recognition.continuous = false;
-        #     recognition.interimResults = true;
-        #     recognition.lang = 'en-US';
-
-        # recognition.onresult = function(event) {
-        # let interimTranscript = '';
-        # for (let i = event.resultIndex; i < event.results.length; ++i) {
-        #     if (event.results[i].isFinal) {
-        #     finalTranscript += event.results[i][0].transcript;
-        #     } else {
-        #     interimTranscript += event.results[i][0].transcript;
-        #     }
-        # }
-        # const el = document.querySelector('textarea.mic_textarea'); // native textarea
-        # if (!el) { console.warn('mic_textarea not found'); return; }
-        # el.value = finalTranscript + interimTranscript;
-        # el.dispatchEvent(new Event('input', { bubbles: true }));    // notify Quasar/NiceGUI
-        # };
-
-        # recognition.onend = function() {
-        # isRecording = false;
-        # const b = document.getElementById('recordButton');
-        # if (b) b.innerText = 'Start Microphone';
-        # };
-
-        # recognition.onerror = function(e) {
-        # console.error('speech error', e);
-        # };
-
-        # function toggleRecording(buttonId) {
-        #     const button = document.getElementById(buttonId);
-        #     if (!isRecording) {
-        #         finalTranscript = '';
-        #         recognition.start();
-        #         isRecording = true;
-        #         button.innerText = 'Stop Microphone';
-        #     } else {
-        #         recognition.stop();
-        #     }
-        # }
-        # </script>
-        # ''')
-
         ui.timer(0.1, lambda: ui.run_javascript(mic_js), once=True)
 
         with ui.footer().classes('justify-center h-8').style('margin: 0; padding:0;'):
@@ -203,10 +149,10 @@ def register_submit_ui():
         
         
         ui.query('body').classes('bg-gradient-to-t from-blue-400 to-blue-100')
-
+        
 
         with ui.row().classes('w-full h-screen items-center justify-center'):
-            with ui.card().classes('max-w-2xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg').style('border: 1px solid #e2e8f0; padding-bottom: 0;') \
+            with ui.card().classes('max-w-3xl mx-auto mt-15 p-6 bg-white shadow-lg rounded-lg').style('border: 1px solid #e2e8f0; padding-bottom: 0;') \
                 .props('rounded=lg shadow=md'):
 
                 with ui.row().classes('items-center justify-between'):
@@ -426,7 +372,27 @@ def register_submit_ui():
 
                     input_box.on('keydown', handle_key)
 
-                    
+                            # Poll the transcript
+                async def poll_once():
+                    async with httpx.AsyncClient() as client:
+                            try:
+                                response = await client.get('http://localhost:8080/get_user_transcript')
+                                if response.status_code == 200:
+                                    result = response.json()
+                                    input_box.text = result.get('text', '')
+
+                                    # print(response)
+
+                                    # Gauti GPT atsakymą
+                                    # g_response = await client.get('http://localhost:8080/get_response')
+                                    # if g_response.status_code == 200:
+                                    #     output_box.text = g_response.json().get('response', '')
+
+                            except Exception as e:
+                                print('Error fetching transcript:', e)
+
+                ui.timer(1.0, callback=lambda: asyncio.create_task(poll_once()))
+
 
                 with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; '):
                     pass

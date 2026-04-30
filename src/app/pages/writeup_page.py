@@ -2,9 +2,9 @@ from nicegui import ui
 import httpx
 import asyncio
 import os
-from ..database.mongodb_db import Read
+from ..database.mongodb_db import Read, Update
 from ..llm.api import paste_scoped_entries
-
+from datetime import datetime
 
 MODEL_URL = os.getenv('LLAMA_BASE')
 
@@ -19,6 +19,9 @@ client_name = 'Joe Hudson'
 normalized_name = client_data['client_name'].lower().replace(' ', '-')
 ROUTE_CLIENT = f'/{normalized_name}/writeup'
 
+selected_patient = {'name': None}
+selected_writeup = {'id': None}
+writeup_buttons = {}
 # ROUTE_PATIENT_PAGE = f'/{normalized_name}/writeup/{{patient_name}}'
 
 
@@ -32,6 +35,12 @@ def parse_date_range(x):
         return None
     start, end = x.split(' - ')
     return {'from': start, 'to': end}
+
+
+
+
+
+
 
 def register_writeup_ui():
     ui.add_head_html("""
@@ -56,6 +65,18 @@ def register_writeup_ui():
     0% { opacity: 1; }
     50% { opacity: 0.3; }
     100% { opacity: 1; }
+    }
+                     
+    .no-scrollbar {
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;      /* Firefox */
+        -ms-overflow-style: none;   /* old Edge/IE */
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent;
     }
     </style>
     """)
@@ -118,7 +139,7 @@ def register_writeup_ui():
                             const ext = mimeType.includes('webm') ? 'webm' : 'mp4';
                             const formData = new FormData();
                             formData.append('file', blob, `audio.${ext}`);
-                            await fetch('/upload', { method: 'POST', body: formData });
+                            await fetch('/upload_pro', { method: 'POST', body: formData });
                         } finally {
                             setBusy(buttonId, false);
                         }
@@ -138,11 +159,12 @@ def register_writeup_ui():
     """
 
 
-
     @ui.page(ROUTE_CLIENT)
     def create_window():
         ui.timer(0.1, lambda: ui.run_javascript(mic_js), once=True)
 
+
+        # Header
         with ui.header().style('padding: 0; padding-top: 0;'):
 
         # with ui.header().classes('w-full justify-start').style('margin: 0; padding: 5;'):
@@ -153,21 +175,34 @@ def register_writeup_ui():
 
                     ui.button(on_click=lambda: left_drawer.toggle(), icon='menu').classes('border-0').props('flat color=white')
 
-
-                    # Manage Programmes
-                    ui.button(icon='psychology_alt', on_click='') \
+                    # Front Page
+                    ui.button(text='Home', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}'")) \
                         .props('flat color=white') \
-                        .tooltip('Manage Programmes') \
+                        .tooltip('Home') \
                         .classes('orientation-vertical justify-start')
-                
+
+
                     # View Entries Button
-                    ui.button(icon='layers', on_click=lambda: ui.run_javascript("window.location.href='/entries'")) \
+                    ui.button(text='Entries', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/entries'")) \
                         .props('flat color=white') \
                         .tooltip('View Entries') \
                         .style('color: white;') \
                         .classes('orientation-vertical justify-start')
+                    
+                    # Manage Programmes
+                    ui.button(text='Programmes', on_click='') \
+                        .props('flat color=white') \
+                        .tooltip('Manage Programmes') \
+                        .classes('orientation-vertical justify-start')
                 
-
+                
+                    # Writeup Page
+                    ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeup'")) \
+                        .props('flat color=white') \
+                        .tooltip('Writeups') \
+                        .style('color: white;') \
+                        .classes('orientation-vertical justify-start')
+                
 
                 # RIGHT Group
                 with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
@@ -181,9 +216,151 @@ def register_writeup_ui():
                     ui.button(icon='power_settings_new', on_click=lambda: ui.run_javascript("window.location.href='/login'")) \
                         .tooltip('Logout') \
                         .props('flat color=white') \
-        
 
-        # Header
+        # Side Menu
+        with ui.left_drawer().classes('w-20 h-full border').props('width=240').style('padding: 0; display: flex; gap: 0;') as left_drawer:
+            
+            with ui.row().classes('w-full flex-nowrap items-stretch'):
+            # Sidebar
+
+                with ui.element('aside').classes('w-full h-full').style('padding: 0; display: flex; flex-direction: column; gap: 0;'):
+        
+                    with ui.row().classes('justify-center'):
+
+                        ui.label('').style('padding-top:20px')
+                        # ui.input()
+
+                    patients = Read().find_all_patients(client_data)
+
+                    def set_active_writeup(patient_name, writeup_id):
+                        selected_writeup['id'] = writeup_id
+
+                        for wid, card in writeup_buttons.items():
+                            if wid == writeup_id:
+                                card.classes(add='bg-blue-200')
+                                card.classes(remove='bg-blue-60')
+
+
+                                object = Read().find_one_writeup(patient_name, writeup_id)
+
+                                style = None
+
+                                for x in object:
+                                    print(x.get('writeups'))
+                                    style = x.get('writeups')
+
+                                # print(style[0]['commentary'])
+
+                                input_box.value = style[0]['commentary']
+                                
+                            else:
+                                card.classes(add='bg-blue-60')
+                                card.classes(remove='bg-blue-200')
+
+
+
+
+                    def load_patient_writeups(patient_name):
+                        selected_patient['name'] = patient_name
+                        selected_writeup['id'] = None
+
+                        writeup_strip.clear()
+                        writeup_buttons.clear()
+
+                        result = Read().find_writeups(patient_name) or []
+                        
+                        if not result:
+                            ui.label('No writeups yet').classes('p-2 text-gray-500')
+                            return
+   
+                        first_doc = result[0] or {}
+                        all_writeups = first_doc.get('writeups', [])
+                        
+                        if not all_writeups:
+                            with writeup_strip:
+                                ui.label('No writeups yet').classes('text-gray-500 p-2')
+                                return
+                            
+                        if all_writeups:
+                            all_writeups.reverse()
+                            
+                            with writeup_strip:
+                                for index, writeup in enumerate(all_writeups):
+                                    writeup_id = writeup.get('id') or writeup.get('_id') or index
+                                    blurb = writeup.get('blurb', 'Untitled')
+                                    timestamp = writeup.get('time_created', 'None')
+
+                                    with ui.card().classes('min-w-[160px] p-2 curson-pointer bg-blue-100') \
+                                        .style('flex: 0 0 auto;') as card:
+
+                                        ui.label(str(timestamp)).classes('text-xs text-gray-500')
+                                        ui.label(str(blurb)).classes('text-sm font-medium truncate')
+
+
+                                    card.on('click', lambda _, wid=writeup_id: set_active_writeup(patient_name, wid))
+                                    writeup_buttons[writeup_id] = card
+
+
+
+                    for patient in patients:
+                        patient_name = patient['patient_name']
+                        
+
+                        ui.button(patient_name).props('flat color=primary') \
+                        .on_click(lambda p=patient_name: load_patient_writeups(p)) \
+                        .classes('w-full')
+
+
+
+
+                    def new_writeup(patient_name):
+                        selected_patient['name'] = patient_name
+                        if not patient_name:
+                            return
+                        
+                        result = Read().find_writeups(patient_name)
+
+                        if not result:
+                            return None
+                        
+                        first_doc = result[0] or {}
+                        all_writeups = first_doc.get('writeups', [])
+
+
+                        new_id = len(all_writeups) + 1 if all_writeups else 1
+                        # Create new writeup card at lookup
+
+                        writeup_strip.clear()
+                        writeup_buttons.clear()
+
+                        with writeup_strip:
+                            with ui.card().classes('min-w-[160px] p-2 curson-pointer bg-blue-200') \
+                                .style('flex: 0 0 auto;') as card:
+
+                                ui.label('Draft').classes('text-xs text-gray-500')
+                                ui.label('New writeup').classes('text-sm truncate')
+
+                            writeup_buttons[new_id] = card
+
+                        selected_writeup['id'] = new_id
+
+        # Writeup lookups
+        with ui.card().classes('w-full'):
+            with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; margin: 0; padding: 0px;'):
+
+                ui.button(icon='add', on_click=lambda : new_writeup(patient_name)).classes('min-w-[24px] h-[24px]')
+                
+
+                with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
+                     
+                    with ui.element('div').classes('w-full overflow-x-auto no-scrollbar'):
+                        with ui.row().classes('no-wrap border min-h-[70px]') as writeup_strip:
+
+
+                                # Becomes active
+                            pass
+
+        # Parameter bar
         with ui.card().classes('w-full justify-start').style('width: 100%; max-width: 100%; max-length: 100%; margin: 0 auto; padding: 20px; overflow-x: hidden;'):
             with ui.row().classes('w-full justify-start items-center').style('flex-wrap: nowrap; '):
 
@@ -210,137 +387,290 @@ def register_writeup_ui():
                 ui.chip('Keywords', selectable=True, icon='label', color='orange').classes('justify-start')
 
 
-        # Side Menu
-        with ui.left_drawer().classes('border w-70').props('width=240') as left_drawer:
-            ui.label('Side menu')
-
-
-        # Summarize form
+        # Notebook form
         with ui.card().classes('w-full justify-between items-center'):
 
         # Type-in box
-            with ui.row().classes('w-full justify-center'):
-                with ui.splitter().classes('w-full') as splitter:
-                    with splitter.before:
-                        with ui.card().classes('justify-center w-full border'):
-                            # input_box = (
-                            #     ui.textarea(placeholder='Session Prep').classes('w-full')
-                            # )
-
-                            input_box = ui.label().style('margin-left: 17px')
-                            # typed_input = ui.label().classes('w-full h-32 p-2').props('clearable')
+            with ui.row().classes('w-full gap-4 no-wrap'):
+                # with ui.splitter().classes('w-full') as splitter:
+                #     with splitter.before:
+                        # with ui.card().classes('justify-center w-full border'):
                             
-                            pass
-
-                    with splitter.after:
-                        with ui.card().classes('justify-center w-full border'):
-                            # output_box = (
-                            #     ui.textarea().classes('w-full')
-                            # )
-
-                            output_box = ui.label('')
-                            pass
-
-
-                # Poll the transcript
-                async def poll_once():
-                    async with httpx.AsyncClient() as client:
-                            try:
-                                response = await client.get('http://localhost:8080/get_transcript')
-                                if response.status_code == 200:
-                                    result = response.json()
-                                    input_box.text = result.get('text', '')
-
-                                    # print(response)
-
-                                    # Gauti GPT atsakymą
-                                    # g_response = await client.get('http://localhost:8080/get_response')
-                                    # if g_response.status_code == 200:
-                                    #     output_box.text = g_response.json().get('response', '')
-
-                            except Exception as e:
-                                print('Error fetching transcript:', e)
-
-                ui.timer(1.0, callback=lambda: asyncio.create_task(poll_once()))
-
+                with ui.editor(placeholder='Type something here').classes('w-1/2').style('min-height: 270px;') as input_box:
                 
-                with ui.row().classes('w-full justify-between items-center'):
-                    with ui.row().classes('w-full justify-start items-center'):
-                        
-    # Record Button
-                        microphone = ui.button().classes('rounded-lg').props('id="recordButton"')
-                        with microphone:
-                            ui.html('<span class="rec-dot"></span>')
-                            ui.icon('mic')
+                # input_box = (
+                #     ui.textarea(placeholder='Session Prep').classes('w-full')
+                # )
+                # input_box = ui.label('')
+                # input_box = ui.label().style('margin-left: 17px; min-height: 250px')
+                # typed_input = ui.label().classes('w-full h-32 p-2').props('clearable')
+                
+                    pass
 
-                        microphone.on('click', lambda: ui.run_javascript('window.toggleRecording("recordButton")'))
-                        # .style('color: grey; background-color: grey; font-size: 100%; font-weight: 300; width:125px;')
+        # with splitter.after:
+                with ui.row().classes('border w-1/2').style('min-height: 270px;'):
+                    output_box = (
+                        ui.textarea().classes('w-full')
+                    )
 
-                        async def generate_summary():
-                            scoped_entries = []
-
-                            raw = date_input.value
-                            parsed = parse_date_range(raw)
-
-                            print('raw:', raw)
-                            print('parsed:', parsed)
-
-                            entries = Read().find_entries(patient_name='Donatas Leika')[0]['entries']
-
-                            if parsed:
-                                start = parsed['from']
-                                end = parsed['to']
-
-                                for entry in entries:
-                                    time_of_entry = entry['time_of_entry'][:10]
-                                    print(time_of_entry)
-                                    print(entry)
+                # output_box = ui.label('').style('min-height: 250px')
+                pass
 
 
-                                    if start <= time_of_entry <= end:
-                                        scoped_entries.append('Entry: {} - {} \n'.format(entry['entry_id'], entry['description']))
+            # Poll the transcript
+            async def poll_once():
+                async with httpx.AsyncClient() as client:
+                        try:
+                            response = await client.get('http://localhost:8080/get_pro_transcript')
+                            if response.status_code == 200:
+                                result = response.json()
+                                input_box.text = result.get('text', '')
 
-                                        # print(entry['entry_id'], entry['description'])
+                                # print(response)
 
-                            else:
-                                for entry in entries:
+                                # Gauti GPT atsakymą
+                                # g_response = await client.get('http://localhost:8080/get_response')
+                                # if g_response.status_code == 200:
+                                #     output_box.text = g_response.json().get('response', '')
+
+                        except Exception as e:
+                            print('Error fetching transcript:', e)
+
+            ui.timer(1.0, callback=lambda: asyncio.create_task(poll_once()))
+
+            
+            with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; margin: 0; padding: 0px;'):
+
+            # LEFT GROUP
+                with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
+                    
+            # Record Button
+                    microphone = ui.button().classes('rounded-lg').props('id="recordButton"')
+                    with microphone:
+                        ui.html('<span class="rec-dot"></span>')
+                        ui.icon('mic')
+
+                    microphone.on('click', lambda: ui.run_javascript('window.toggleRecording("recordButton")'))
+                    # .style('color: grey; background-color: grey; font-size: 100%; font-weight: 300; width:125px;')
+
+                    async def generate_summary(patient_name):
+                        scoped_entries = []
+
+                        raw = date_input.value
+                        parsed = parse_date_range(raw)
+
+                        print('raw:', raw)
+                        print('parsed:', parsed)
+
+                        entries = Read().find_entries(patient_name)[0]['entries']
+
+                        if parsed:
+                            start = parsed['from']
+                            end = parsed['to']
+
+                            for entry in entries:
+                                time_of_entry = entry['time_of_entry'][:10]
+                                print(time_of_entry)
+                                print(entry)
+
+
+                                if start <= time_of_entry <= end:
                                     scoped_entries.append('Entry: {} - {} \n'.format(entry['entry_id'], entry['description']))
+
                                     # print(entry['entry_id'], entry['description'])
-                                
 
-
+                        else:
+                            for entry in entries:
+                                scoped_entries.append('Entry: {} - {} \n'.format(entry['entry_id'], entry['description']))
+                                # print(entry['entry_id'], entry['description'])
                             
+
+
                         
-                            gen_response = await paste_scoped_entries(scoped_entries)
-                            print(gen_response)
+                    
+                        gen_response = await paste_scoped_entries(scoped_entries)
+                        print(gen_response)
 
-                            if gen_response:
+                        if gen_response:
+                        
+                            output_box.text = gen_response['choices'][0]['message']['content']
+
+                            # if entry['time_of_entry'] > date_start:
+                                
                             
-                                output_box.text = gen_response['choices'][0]['message']['content']
+                    
+                        # print(entry['entry_id'], entry['description'])
 
-                                # if entry['time_of_entry'] > date_start:
+                    ui.button('Enhance Summary', on_click=generate_summary).classes('rounded-lg')
+
+                    def save_writeup(patient_name, input_box):
+                        result = Read().find_writeups(patient_name)
+
+                        input = input_box.value
+
+                        if not result:
+                            return None
+                        
+                        first_doc = result[0] or {}
+                        all_writeups = first_doc.get('writeups', [])
+
+                        print(input)
+
+
+                        new_id = len(all_writeups) + 1 if all_writeups else 1
+
+                        writeup_data = {
+                            'id': new_id,
+                            'time_created': datetime.now().ctime(),
+                            'patient_name': patient_name,
+                            'commentary': input,
+                            'summary': ''
+                        }
+
+                        # tag_data = 'Placeholder'
+                        
+                        Update().insert_one_writeup(client_data, writeup_data)
+                        
+
+
+
+                # with ui.row().classes('w-full justify-end'):
+                with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
+
+                    ui.button('Save', on_click= lambda: save_writeup(patient_name, input_box)).classes('justify-end items-center rounded-lg')
+
+        summary_extension_counter = None
+
+        ui.button(icon='add', on_click=lambda: extend_workflow(summary_extension_counter)).classes('w-full rounded-lg h-6 border').style('margin: 0; padding:0;').props('flat')
+
+        
+
+        async def extend_workflow(summary_extension_counter):
+            summary_extension_counter += 1
+                   # Notebook form
+            with ui.card().classes('w-full justify-between items-center'):
+
+            # Type-in box
+                with ui.row().classes('w-full justify-center'):
+                    with ui.splitter().classes('w-full') as splitter:
+                        with splitter.before:
+                            with ui.card().classes('justify-center w-full border'):
+                                # input_box = (
+                                #     ui.textarea(placeholder='Session Prep').classes('w-full')
+                                # )
+
+                                input_box = ui.label().style('margin-left: 17px; min-height: 250px')
+                                # typed_input = ui.label().classes('w-full h-32 p-2').props('clearable')
+                                
+                                pass
+
+                        with splitter.after:
+                            with ui.card().classes('justify-center w-full border'):
+                                # output_box = (
+                                #     ui.textarea().classes('w-full')
+                                # )
+
+                                output_box = ui.label('').style('min-height: 250px')
+                                pass
+
+
+                    # Poll the transcript
+                    async def poll_once():
+                        async with httpx.AsyncClient() as client:
+                                try:
+                                    response = await client.get('http://localhost:8080/get_pro_transcript')
+                                    if response.status_code == 200:
+                                        result = response.json()
+                                        input_box.text = result.get('text', '')
+
+                                        # print(response)
+
+                                        # Gauti GPT atsakymą
+                                        # g_response = await client.get('http://localhost:8080/get_response')
+                                        # if g_response.status_code == 200:
+                                        #     output_box.text = g_response.json().get('response', '')
+
+                                except Exception as e:
+                                    print('Error fetching transcript:', e)
+
+                    ui.timer(1.0, callback=lambda: asyncio.create_task(poll_once()))
+
+                    
+                    with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; margin: 0; padding: 0px;'):
+
+                    # LEFT GROUP
+                        with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
+                            
+                    # Record Button
+                            microphone = ui.button().classes('rounded-lg').props('id="recordButton"')
+                            with microphone:
+                                ui.html('<span class="rec-dot"></span>')
+                                ui.icon('mic')
+
+                            microphone.on('click', lambda: ui.run_javascript('window.toggleRecording("recordButton")'))
+                            # .style('color: grey; background-color: grey; font-size: 100%; font-weight: 300; width:125px;')
+
+                            async def generate_summary():
+                                scoped_entries = []
+
+                                raw = date_input.value
+                                parsed = parse_date_range(raw)
+
+                                print('raw:', raw)
+                                print('parsed:', parsed)
+
+                                entries = Read().find_entries(patient_name='Donatas Leika')[0]['entries']
+
+                                if parsed:
+                                    start = parsed['from']
+                                    end = parsed['to']
+
+                                    for entry in entries:
+                                        time_of_entry = entry['time_of_entry'][:10]
+                                        print(time_of_entry)
+                                        print(entry)
+
+
+                                        if start <= time_of_entry <= end:
+                                            scoped_entries.append('Entry: {} - {} \n'.format(entry['entry_id'], entry['description']))
+
+                                            # print(entry['entry_id'], entry['description'])
+
+                                else:
+                                    for entry in entries:
+                                        scoped_entries.append('Entry: {} - {} \n'.format(entry['entry_id'], entry['description']))
+                                        # print(entry['entry_id'], entry['description'])
                                     
+
+
                                 
-                        
-                            # print(entry['entry_id'], entry['description'])
+                            
+                                gen_response = await paste_scoped_entries(scoped_entries)
+                                print(gen_response)
+
+                                if gen_response:
+                                
+                                    output_box.text = gen_response['choices'][0]['message']['content']
+
+                                    # if entry['time_of_entry'] > date_start:
+                                        
+                                    
+                            
+                                # print(entry['entry_id'], entry['description'])
+
+                            ui.button('Enhance Summary', on_click=generate_summary).classes('rounded-lg')
 
 
-                        
-                        ui.button('Generate Summary', on_click=generate_summary).classes('rounded-lg')
+                            
+
+                        # with ui.row().classes('w-full justify-end'):
+                        with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
+
+                            ui.button('Save').classes('justify-end items-center rounded-lg')
 
 
-                        
-
-                    # with ui.row().classes('w-full justify-end'):
-
-                        ui.button('Save').classes('justify-end items-center rounded-lg')
-
-        ui.button(icon='add').classes('w-full rounded-lg h-6 border').style('margin: 0; padding:0;').props('flat')
+            ui.button(icon='add').classes('w-full rounded-lg h-6 border').style('margin: 0; padding:0;').props('flat')
 
         # Footer
         with ui.footer(value=True).classes('h-8').style('margin: 0; padding:0;') as footer:
             pass
-            # ui.label('Footer')
-
-        # with ui.page_sticky(position='bottom-right', x_offset=20, y_offset=20):
-        #     ui.button(on_click=footer.toggle, icon='contact_support').props('fab')

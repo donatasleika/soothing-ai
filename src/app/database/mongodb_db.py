@@ -69,6 +69,8 @@ class Create:
             db.create_collection(collection_name)
             return db[collection_name]
 
+
+
 class Read:
     def __init__(self) -> None:
         pass
@@ -132,7 +134,7 @@ class Read:
 
     def find_entries(self, patient_name: str):
         results = collection.find({
-            "patient_name": patient_name
+            "patient_name": patient_name["patient_name"]
         })
         return list(results)
 
@@ -150,9 +152,26 @@ class Read:
         # print(results)
         return results
 
-        # for result in results:
-        #     # projects["entries": []] = result
-        #     print(result)
+
+    
+    def find_writeups(self, patient_name: str):
+        results = collection.find({
+            "patient_name": patient_name
+        })
+        return list(results)
+    
+    def find_one_writeup(self, patient_name, writeup_id):
+        result = collection.find(
+            {"patient_name": patient_name,
+             "writeups.id": writeup_id},
+            
+            {
+                "writeups.$": 1,
+                "_id": 0
+            }
+            )
+             
+        return list(result)
     
     def check_llm_tags(self, patient_name: str):
         docs = collection.find(
@@ -195,12 +214,32 @@ class Update:
             "client_id": patient_data["client_id"],
             "patient_name": patient_data["patient_name"],
             "private_url_token": patient_data["private_url_token"],
-            "entries": []
+            "entries": [],
+            "writeups": []
         })
         print("Data has been uploaded")
 
 
-    def insert_one_entry(self, client_data, entry_data, tag_data):
+    def insert_one_writeup(self, client_data, writeup_data):
+        collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
+        collection = db[collection_name]
+        full_writeup = {**writeup_data, "commentary": writeup_data['commentary']}
+
+
+        collection.update_one(
+            {"patient_name": writeup_data['patient_name']},
+            {"$push": {
+                "writeups": full_writeup}},
+                upsert=True
+        )
+        print("Writeup uploaded")
+
+    def insert_one_writeup_blurb(self):
+
+        pass
+
+
+    def insert_one_entry(self, client_data, entry_data):
         collection_name = f"{client_data['client_name']}_{client_data['client_id']}_Patients"
         collection = db[collection_name]
         full_entry = {**entry_data, "tags":tag_data}
@@ -255,6 +294,8 @@ class Update:
 
             }
         ])
+
+
 
 class Delete:
     def __init__(self) -> None:
