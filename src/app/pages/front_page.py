@@ -94,7 +94,7 @@ def register_admin_ui():
                     #     .props('flat color=white') \
                     #     .tooltip('Manage Programmes') \
                     #     .classes('orientation-vertical justify-start')
-                
+                 
                 
                     # Writeup Page
                     ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeup'")) \
