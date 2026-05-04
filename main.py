@@ -42,5 +42,5 @@ ui.run(
     favicon='', 
     dark=False,
     show=False,
-    reload=False)
+    reload=True)
 

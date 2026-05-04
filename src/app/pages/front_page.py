@@ -59,7 +59,7 @@ async def create_private_url(patient_name: str, patient_id: str) -> str:
 
     base_url = get_base_url()
 
-    return f'{base_url}/{normalized}/{token}'
+    return f'{base_url}/submit/{normalized}/{token}'
 
 
 
@@ -97,7 +97,7 @@ def register_admin_ui():
                  
                 
                     # Writeup Page
-                    ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeup'")) \
+                    ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeups'")) \
                         .props('flat color=white') \
                         .tooltip('Writeups') \
                         .style('color: white;') \
@@ -184,12 +184,13 @@ def register_admin_ui():
                     name_input = ui.input(label='Patient Name')
 
 
-                    with ui.row():
-                        ui.radio(options=['Default', 'CBT Programme', 'Custom Programme']) \
-                            .classes('w-full text-xs rounded-lg') \
-                            .style('width: 178px; font-size: 10px;')
+            # Assign Programmes
+                    # with ui.row():
+                    #     ui.radio(options=['Default', 'CBT Programme', 'Custom Programme']) \
+                    #         .classes('w-full text-xs rounded-lg') \
+                    #         .style('width: 178px; font-size: 10px;')
                         
-                    ui.button('Submit', on_click= lambda: submit(name_input)) \
+                    ui.button('Create', on_click= lambda: submit(name_input)) \
                         .classes('text-white bg-blue-500 hover:bg-blue-600 w-full rounded-lg')
 
             new_patient_dialog.open()
@@ -216,7 +217,10 @@ def register_admin_ui():
             # with ui.card().classes('bg-gray-100 p-6 w-full'):
 
                 with ui.page_sticky(x_offset=18, y_offset=18):
-                    ui.button(icon='add', on_click= lambda: new_patient_form())
+                    ui.button(icon='add', on_click= lambda: new_patient_form()) \
+                    .tooltip('Create New Patient') \
+                    .props('round')
+                    
 
                 async def delete_patient(patient_card, new_patient_id):
                     patient_card.delete()
@@ -368,15 +372,21 @@ def register_admin_ui():
                                     
                                     # Write-Up Button
                                     ui.button('Write-Up') \
-                                        .on_click(f"/{normalized}/writeup/{quote(patient_name)}") \
+                                        .on_click(
+                                                lambda name=patient_name: ui.navigate.to(f'/writeups?patient={quote(name)}')
+                                            ) \
                                         .classes('text-white text-xs rounded-md hover:bg-blue-600') \
                                         .style('flex: 1; height: 32px; background-color: #4a90e2;')
 
-                                    # Show Trends Button
-                                    ui.button('Trends') \
-                                        .on_click(f"/{normalized}/trends/{quote(patient_name)}") \
-                                        .classes('text-white text-xs rounded-md hover:bg-gray-300') \
-                                        .style('flex: 1; height: 32px;')
+                                    # pending = ui.dialog('Feature Pending!')
+
+                                    # # Show Trends Button
+                                    # ui.button('Trends') \
+                                    #     .on_click(pending) \
+                                    #     .classes('text-white text-xs rounded-md hover:bg-gray-300') \
+                                    #     .style('flex: 1; height: 32px;')
+                                    
+                                       # .on_click(f"/{normalized}/trends/{quote(patient_name)}") \
 
 
         async def populate_patient_cards():

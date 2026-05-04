@@ -5,6 +5,7 @@ import os
 from ..database.mongodb_db import Read, Update
 from ..llm.api import paste_scoped_entries
 from datetime import datetime
+from urllib.parse import quote
 
 MODEL_URL = os.getenv('LLAMA_BASE')
 
@@ -17,9 +18,10 @@ client_data = {
 client_name = 'Joe Hudson'
 
 normalized_name = client_data['client_name'].lower().replace(' ', '-')
-ROUTE_CLIENT = f'/{normalized_name}/writeup'
+ROUTE_CLIENT = f'/{normalized_name}/writeups'
 
 selected_patient = {'name': None}
+selected_button = {'button': None}
 selected_writeup = {'id': None}
 writeup_buttons = {}
 # ROUTE_PATIENT_PAGE = f'/{normalized_name}/writeup/{{patient_name}}'
@@ -197,7 +199,7 @@ def register_writeup_ui():
                 
                 
                     # Writeup Page
-                    ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeup'")) \
+                    ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeups'")) \
                         .props('flat color=white') \
                         .tooltip('Writeups') \
                         .style('color: white;') \
@@ -239,23 +241,26 @@ def register_writeup_ui():
                             if wid == writeup_id:
                                 card.classes(add='bg-blue-200')
                                 card.classes(remove='bg-blue-60')
-
-
-                                object = Read().find_one_writeup(patient_name, writeup_id)
-
-                                style = None
-
-                                for x in object:
-                                    print(x.get('writeups'))
-                                    style = x.get('writeups')
-
-                                # print(style[0]['commentary'])
-
-                                input_box.value = style[0]['commentary']
-                                
                             else:
-                                card.classes(add='bg-blue-60')
+                                card.classes(add='bg-blue-100')
                                 card.classes(remove='bg-blue-200')
+
+
+                        result = Read().find_one_writeup(patient_name, writeup_id)
+
+                        writeups = []
+                        for doc in result:
+                            writeups = doc.get('writeups', [])
+                            break
+
+                        if not writeups:
+                            input_box.value = ''
+                            return
+
+
+                        input_box.value = writeups[0].get('commentary', '')
+                        
+                
 
 
 
@@ -266,12 +271,14 @@ def register_writeup_ui():
 
                         writeup_strip.clear()
                         writeup_buttons.clear()
+                        input_box.value = ''
 
                         result = Read().find_writeups(patient_name) or []
                         
                         if not result:
-                            ui.label('No writeups yet').classes('p-2 text-gray-500')
-                            return
+                            with writeup_strip:
+                                ui.label('No writeups yet').classes('p-2 text-gray-500')
+                                return
    
                         first_doc = result[0] or {}
                         all_writeups = first_doc.get('writeups', [])
@@ -281,84 +288,145 @@ def register_writeup_ui():
                                 ui.label('No writeups yet').classes('text-gray-500 p-2')
                                 return
                             
-                        if all_writeups:
-                            all_writeups.reverse()
+                        all_writeups = list(reversed(all_writeups))
                             
-                            with writeup_strip:
-                                for index, writeup in enumerate(all_writeups):
-                                    writeup_id = writeup.get('id') or writeup.get('_id') or index
-                                    blurb = writeup.get('blurb', 'Untitled')
-                                    timestamp = writeup.get('time_created', 'None')
+                            
+                        with writeup_strip:
+                            for index, writeup in enumerate(all_writeups):
+                                writeup_id = writeup.get('id') or writeup.get('_id') or index
+                                blurb = writeup.get('blurb', 'Untitled')
+                                timestamp = writeup.get('time_created', 'None')
 
-                                    with ui.card().classes('min-w-[160px] p-2 curson-pointer bg-blue-100') \
-                                        .style('flex: 0 0 auto;') as card:
+                                with ui.card().classes('min-w-[160px] p-2 cursor-pointer bg-blue-100') \
+                                    .style('flex: 0 0 auto;') as card:
 
-                                        ui.label(str(timestamp)).classes('text-xs text-gray-500')
-                                        ui.label(str(blurb)).classes('text-sm font-medium truncate')
+                                    ui.label(str(timestamp)).classes('text-xs text-gray-500')
+                                    ui.label(str(blurb)).classes('text-sm font-medium truncate')
 
 
-                                    card.on('click', lambda _, wid=writeup_id: set_active_writeup(patient_name, wid))
-                                    writeup_buttons[writeup_id] = card
+                                card.on('click', lambda _, p=patient_name, wid=writeup_id: set_active_writeup(p, wid))
+                                writeup_buttons[writeup_id] = card
 
+                    def select_patient(button, patient_name):
+
+                        if selected_button['button']:
+                            selected_button['button'].props('flat color=primary')
+                            selected_button['button'].classes(remove='bg-blue-100 text-blue-900')
+
+                        selected_patient['name'] = patient_name
+                        selected_button['button'] = button
+
+                        button.props('unelevated color=primary')
+                        button.classes('bg-blue-100 text-blue-900')
+
+                        load_patient_writeups(patient_name)
 
 
                     for patient in patients:
                         patient_name = patient['patient_name']
                         
 
-                        ui.button(patient_name).props('flat color=primary') \
-                        .on_click(lambda p=patient_name: load_patient_writeups(p)) \
+                        btn = ui.button(patient_name).props('flat color=primary') \
                         .classes('w-full')
+                        
+                        
+                        btn.on_click(lambda b=btn, p=patient_name: select_patient(b, p)) \
+
+                        # .on_click(lambda p=patient_name, n=normalized_name: ui.run_javascript(
+                        #     f"window.location.href='/{n}/writeup/{quote(p)}'"
+                        # ))
+
+                    def select_draft_writeup():
+                        selected_writeup['id'] = 'draft'
+                        input_box.value = ''
+
+                        for wid, card in writeup_buttons.items():
+                            if wid == 'draft':
+                                card.classes(remove='bg-blue-100')
+                                card.classes(add='bg-blue-200')
+                            else:
+                                card.classes(remove='bg-blue-200')
+                                card.classes(add='bg-blue-100')
+
+                    def render_draft_card():
+                        with ui.card().classes('min-w-[160px] p-2 cursor-pointer bg-blue-200') \
+                            .style('flex: 0 0 auto;') as draft_card:
+
+                            ui.label('Draft').classes('text-xs text-gray-500')
+                            ui.label('New writeup').classes('text-sm truncate')
+
+                        draft_card.on('click', lambda _: select_draft_writeup())
+                        writeup_buttons['draft'] = draft_card
 
 
-
-
-                    def new_writeup(patient_name):
-                        selected_patient['name'] = patient_name
+                    async def new_writeup():
+                        patient_name = selected_patient['name']
+                        
                         if not patient_name:
+                            writeup_strip.clear()
+                            with writeup_strip:
+                                ui.label('Select a patient first').classes('text-gray-500 p-2')
+                            writeup_strip.update()
                             return
+                        
+                        selected_writeup['id'] = 'draft'
+                        input_box.value = ''
                         
                         result = Read().find_writeups(patient_name)
 
-                        if not result:
-                            return None
+                        # if not result:
+                        #     return None
                         
                         first_doc = result[0] or {}
                         all_writeups = first_doc.get('writeups', [])
 
 
-                        new_id = len(all_writeups) + 1 if all_writeups else 1
+                        # new_id = len(all_writeups) + 1 if all_writeups else 1
                         # Create new writeup card at lookup
 
                         writeup_strip.clear()
                         writeup_buttons.clear()
 
                         with writeup_strip:
-                            with ui.card().classes('min-w-[160px] p-2 curson-pointer bg-blue-200') \
-                                .style('flex: 0 0 auto;') as card:
+                            render_draft_card()
 
-                                ui.label('Draft').classes('text-xs text-gray-500')
-                                ui.label('New writeup').classes('text-sm truncate')
+                            for index, writeup in enumerate(reversed(all_writeups)):
+                                writeup_id = writeup.get('id') or writeup.get('_id') or index
+                                blurb = writeup.get('blurb', 'Untitled')
+                                timestamp = writeup.get('time_created', 'None')
 
-                            writeup_buttons[new_id] = card
+                                with ui.card().classes('min-w-[160px] p-2 cursor-pointer bg-blue-100') \
+                                    .style('flex: 0 0 auto;') as card:
 
-                        selected_writeup['id'] = new_id
+                                    ui.label(str(timestamp)).classes('text-xs text-gray-500')
+                                    ui.label(str(blurb)).classes('text-sm font-medium truncate')
+
+                                card.on('click', lambda _, p=patient_name, wid=writeup_id: set_active_writeup(p, wid))
+                                writeup_buttons[writeup_id] = card
+                        
+                        # draft_card.on('click', lambda _: select_draft_writeup())
+                                
+                        # writeup_buttons['draft'] = draft_card
+
+                        # writeup_strip.update()
+
+                        # selected_writeup['id'] = new_id
 
         # Writeup lookups
         with ui.card().classes('w-full'):
-            with ui.row().classes('w-full justify-between items-center').style('flex-wrap: nowrap; margin: 0; padding: 0px;'):
+            with ui.row().classes('w-full items-center gap-2 flex-nowrap'):
 
-                ui.button(icon='add', on_click=lambda : new_writeup(patient_name)).classes('min-w-[24px] h-[24px]')
-                
+                ui.button(icon='add', on_click=new_writeup) \
+                    .classes('shrink-0 min-w-[20px] h-[20px]') \
+                    .props('dense')                
 
-                with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
-                     
-                    with ui.element('div').classes('w-full overflow-x-auto no-scrollbar'):
-                        with ui.row().classes('no-wrap border min-h-[70px]') as writeup_strip:
+                # with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
+                with ui.element('div').classes('flex-1 min-w-0 overflow-x-auto no-scrollbar'):
+                    with ui.row().classes('flex-nowrap border min-h-[70px]') as writeup_strip:
 
 
-                                # Becomes active
-                            pass
+                            # Becomes active
+                        pass
 
         # Parameter bar
         with ui.card().classes('w-full justify-start').style('width: 100%; max-width: 100%; max-length: 100%; margin: 0 auto; padding: 20px; overflow-x: hidden;'):
@@ -408,14 +476,17 @@ def register_writeup_ui():
                     pass
 
         # with splitter.after:
-                with ui.row().classes('border w-1/2').style('min-height: 270px;'):
-                    output_box = (
-                        ui.textarea().classes('w-full')
-                    )
-
+                    with ui.card().classes(
+                        # 'w-1/2 min-h-[270px] max-h-[420px] overflow-y-auto p-4 border rounded-xl shadow-sm bg-white'
+                    ):                  
+                        ui.label('Summarized Notes:')
+  
+                        output_box = (
+                        ui.markdown('Summary Notes:').classes('w-full')
+                        )
                 # output_box = ui.label('').style('min-height: 250px')
                 pass
-
+            summary_extension_counter = {'count': 0}
 
             # Poll the transcript
             async def poll_once():
@@ -424,7 +495,11 @@ def register_writeup_ui():
                             response = await client.get('http://localhost:8080/get_pro_transcript')
                             if response.status_code == 200:
                                 result = response.json()
-                                input_box.text = result.get('text', '')
+                                text = result.get('text', '')
+
+                                if not text:
+                                    return
+                                
 
                                 # print(response)
 
@@ -445,15 +520,22 @@ def register_writeup_ui():
                 with ui.row().classes('w-full items-center gap-4').style('padding: 0px;'):
                     
             # Record Button
-                    microphone = ui.button().classes('rounded-lg').props('id="recordButton"')
+                    button_id = f"recordButton-{summary_extension_counter['count']}"
+                    microphone = ui.button().classes('rounded-lg').props(f'id="{button_id}"')
                     with microphone:
                         ui.html('<span class="rec-dot"></span>')
                         ui.icon('mic')
 
-                    microphone.on('click', lambda: ui.run_javascript('window.toggleRecording("recordButton")'))
+                    microphone.on('click', lambda bid=button_id: ui.run_javascript(f'window.toggleRecording("{bid}")'))
                     # .style('color: grey; background-color: grey; font-size: 100%; font-weight: 300; width:125px;')
 
-                    async def generate_summary(patient_name):
+                    async def generate_summary():
+                        patient_name = selected_patient['name']
+
+                        if not patient_name:
+                            ui.notify('Select a patient first')
+                            return
+
                         scoped_entries = []
 
                         raw = date_input.value
@@ -462,7 +544,13 @@ def register_writeup_ui():
                         print('raw:', raw)
                         print('parsed:', parsed)
 
-                        entries = Read().find_entries(patient_name)[0]['entries']
+                        result = Read().find_entries(patient_name)
+
+                        if not result:
+                            output_box.content = 'No entries found'
+                            return
+                        
+                        entries = result[0].get('entries', [])
 
                         if parsed:
                             start = parsed['from']
@@ -481,7 +569,10 @@ def register_writeup_ui():
 
                         else:
                             for entry in entries:
-                                scoped_entries.append('Entry: {} - {} \n'.format(entry['entry_id'], entry['description']))
+                                scoped_entries.append(
+                                    'Entry: {} - {} \n'.format(
+                                        entry.get('entry_id'), 
+                                        entry.get('description')))
                                 # print(entry['entry_id'], entry['description'])
                             
 
@@ -493,7 +584,7 @@ def register_writeup_ui():
 
                         if gen_response:
                         
-                            output_box.text = gen_response['choices'][0]['message']['content']
+                            output_box.content = gen_response['choices'][0]['message']['content']
 
                             # if entry['time_of_entry'] > date_start:
                                 
@@ -503,19 +594,26 @@ def register_writeup_ui():
 
                     ui.button('Enhance Summary', on_click=generate_summary).classes('rounded-lg')
 
-                    def save_writeup(patient_name, input_box):
-                        result = Read().find_writeups(patient_name)
+                    def save_writeup():
+                        patient_name = selected_patient['name']
 
-                        input = input_box.value
+                        if not patient_name:
+                            with writeup_strip:
+                                ui.label('Select a patient first')
+                                return
 
-                        if not result:
-                            return None
+                        commentary = input_box.value
+
+                        if not commentary:
+                            with writeup_strip:
+                                ui.label('Nothing to save')
+                            return
                         
-                        first_doc = result[0] or {}
+                        result = Read().find_writeups(patient_name)
+                        first_doc = result[0] if result else {}
                         all_writeups = first_doc.get('writeups', [])
 
-                        print(input)
-
+                        print(commentary)
 
                         new_id = len(all_writeups) + 1 if all_writeups else 1
 
@@ -523,30 +621,30 @@ def register_writeup_ui():
                             'id': new_id,
                             'time_created': datetime.now().ctime(),
                             'patient_name': patient_name,
-                            'commentary': input,
-                            'summary': ''
+                            'commentary': commentary,
+                            'summary': output_box.content if hasattr(output_box, 'content') else ''
                         }
 
                         # tag_data = 'Placeholder'
                         
                         Update().insert_one_writeup(client_data, writeup_data)
                         
+                        selected_writeup['id'] = new_id
 
+                        load_patient_writeups(patient_name)
+                        set_active_writeup(patient_name, new_id)
 
+                        ui.notify('Writeup saved', type='positive')
 
                 # with ui.row().classes('w-full justify-end'):
                 with ui.row().classes('justify-end gap-4').style('flex-wrap: nowrap;'):
 
-                    ui.button('Save', on_click= lambda: save_writeup(patient_name, input_box)).classes('justify-end items-center rounded-lg')
+                    ui.button('Save', on_click=save_writeup).classes('justify-end items-center rounded-lg')
 
-        summary_extension_counter = None
 
-        ui.button(icon='add', on_click=lambda: extend_workflow(summary_extension_counter)).classes('w-full rounded-lg h-6 border').style('margin: 0; padding:0;').props('flat')
-
-        
 
         async def extend_workflow(summary_extension_counter):
-            summary_extension_counter += 1
+            summary_extension_counter['count'] += 1
                    # Notebook form
             with ui.card().classes('w-full justify-between items-center'):
 
@@ -670,6 +768,12 @@ def register_writeup_ui():
 
 
             ui.button(icon='add').classes('w-full rounded-lg h-6 border').style('margin: 0; padding:0;').props('flat')
+
+
+        ui.button(icon='add', on_click=lambda: extend_workflow(summary_extension_counter)).classes('w-full rounded-lg h-6 border').style('margin: 0; padding:0;').props('flat')
+
+        
+
 
         # Footer
         with ui.footer(value=True).classes('h-8').style('margin: 0; padding:0;') as footer:

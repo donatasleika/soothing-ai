@@ -12,10 +12,11 @@ client_data = {
 }
 
 selected_patient = {'name': None}
+selected_button = {'button': None}
 # entries_container = ui.column().classes('justify-left').style('margin: 0; padding: 8px;') # Shared container for dynamic entry display
 
 
-async def ruler_plot(times, y, labels):
+def ruler_plot(times, y, labels):
 
     time_series = go.Figure(
         go.Scatter(
@@ -218,7 +219,7 @@ def register_entries_ui():
                 
                 
                     # Writeup Page
-                    ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeup'")) \
+                    ui.button(text='Writeups', on_click=lambda: ui.run_javascript(f"window.location.href='/{normalized_name}/writeups'")) \
                         .props('flat color=white') \
                         .tooltip('Writeups') \
                         .style('color: white;') \
@@ -249,8 +250,24 @@ def register_entries_ui():
                 
                             with ui.row().classes('justify-center'):
 
-                                ui.label('')
+                                ui.label('').style('padding-top:20px')
                                 patients = Read().find_all_patients(client_data)
+
+
+                            def select_patient(button, patient_name):
+
+                                if selected_button['button']:
+                                    selected_button['button'].props('flat color=primary')
+                                    selected_button['button'].classes(remove='bg-blue-100 text-blue-900')
+
+                                selected_patient['name'] = patient_name
+                                selected_button['button'] = button
+
+                                button.props('unelevated color=primary')
+                                button.classes('bg-blue-100 text-blue-900')
+
+                                populate_cards(patient_name)
+
 
                             for patient in patients:
                                 patient_name = patient['patient_name']
@@ -258,11 +275,11 @@ def register_entries_ui():
 
         # with ui.row().classes('w-full h-screen flex-nowrap items-stretch'):
 
-                                ui.button(patient_name).props('flat color=primary') \
-                                    .on_click(lambda p=patient_name: populate_cards(p)) \
+                                btn = ui.button(patient_name).props('flat color=primary') \
                                     .classes('w-full')
                                     # .on_click(lambda p=p: ui.link(f"/entries/{p['patient_name']}")) \
-                             
+                                
+                                btn.on_click(lambda b=btn, p=patient_name: select_patient(b, p)) \
 
 
                             # global entries_container
@@ -275,7 +292,7 @@ def register_entries_ui():
 
 
 
-            async def populate_cards(p_name):
+            def populate_cards(p_name):
                 top.clear()
                 cards.clear()
 
@@ -296,7 +313,7 @@ def register_entries_ui():
                     # print(y)
 
                     with top:
-                        await ruler_plot(times, y, labels)
+                        ruler_plot(times, y, labels)
 
 
                     with cards:
